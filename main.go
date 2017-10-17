@@ -2,31 +2,23 @@ package main
 
 import (
 	"flag"
-	"fmt"
-
-	"github.com/okkur/gitor/commands"
 )
 
 func main() {
-	//Flags that are to be added to commands
-	var (
-		pull string
-	)
 
 	var (
-		remote string
-		branch string
+		scmd     string
+		upstream string
+		branch   string
 	)
 
-	commands.Pull()
-
-	flag.StringVar(&pull, "command", "gitor --command=pull", "pulls a repository")
-	flag.StringVar(&remote, "remote", "gitor", "specifies remotename")
-	flag.StringVar(&branch, "branch", "master", "specifies branchname")
+	flag.StringVar(&scmd, "command", "pull", "pulls a repository")
+	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
+	flag.StringVar(&branch, "branch", "master", "specifies branch")
 
 	flag.Parse()
 
-	fmt.Println(pull)
-	fmt.Println(remote)
-	fmt.Println(branch)
+	if scmd == "pull" {
+		pull(scmd, upstream, branch)
+	}
 }

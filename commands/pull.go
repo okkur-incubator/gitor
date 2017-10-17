@@ -1,5 +1,0 @@
-package commands
-
-func Pull() {
-
-}
