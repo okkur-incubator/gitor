@@ -4,8 +4,8 @@ import (
 	"fmt"
 )
 
-func pull(scmd string, upstream string, branch string) error {
-	fmt.Println(scmd)
+func pull(command string, upstream string, branch string) error {
+	fmt.Println(command)
 	fmt.Println(upstream)
 	fmt.Println(branch)
 	return nil
