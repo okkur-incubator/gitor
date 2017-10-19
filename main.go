@@ -19,14 +19,14 @@ func main() {
 
 	flag.Parse()
 	command := flag.Args()[0]
-	if command == "pull" {
-		pull(command, upstream, branch)
+	if command == "update" {
+		update(upstream, branch)
 	}
 }
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage: gitor [subcommand] [flags]\n")
 	flag.PrintDefaults()
-	fmt.Fprintf(os.Stderr, "Subcommands: pull\n")
+	fmt.Fprintf(os.Stderr, "Subcommands: update\n")
 	os.Exit(2)
 }
