@@ -1,0 +1,57 @@
+project:
+  name: "Gitor"
+  state: "unstable"
+  image: ""
+  website: ""
+  oneLiner: "Git repository mirroring implemented in pure Go."
+  description: |
+    Mirror your repositories between Github, Gitlab or other platforms.
+    Archive your projects, backup your dependencies or keep your forks up to date.
+  version: "v0.0.0"
+  mainLicense: "apache2"
+  docsLicense: "CCBySa"
+
+vision:
+  type: "community"
+  overview: |
+    The project implements a simple mirroring implementation in pure Go.
+  items:
+    - "No reliance on non Go code/deps"
+    - "Simple mirroring for now"
+    - "Edgecases might not be added"
+  concept: "Gitor wants to make a static binary git mirroring cli tool possible."
+
+contributionLinks:
+  issueTemplate: "/.github/ISSUE_TEMPLATE.md"
+  starterIssues: "https://github.com/okkur/gitor/labels/starter%20issue" # replace dear-github with your actual url
+
+emails:
+  commercialSupport: "support@okkur.io"
+  security: "security@okkur.io"
+  coc: "coc@okkur.io"
+
+copyright:
+  year: "2017"
+
+cla:
+  copyrightHolder: "Michael Grosser"
+
+maintainers:
+  - name: "David Briesz"
+    nick: "dbriesz"
+  - name: "Michael Grosser"
+    nick: "stp-ip"
+
+repo:
+  link: "https://github.com/okkur/gitor/"
+  type: "Github"
+
+badges:
+  - image: "https://img.shields.io/badge/state-unstable-blue.svg"
+    alt: "state"
+  - image: "https://img.shields.io/github/release/okkur/gitor.svg"
+    link: "https://github.com/okkur/gitor/releases"
+    alt: "release"
+  - image: "https://img.shields.io/github/license/okkur/gitor.svg"
+    link: "LICENSE"
+    alt: "license"
