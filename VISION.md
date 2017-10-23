@@ -7,7 +7,8 @@ Our detailed items:
 * Simple mirroring for now
 * Edgecases might not be added
 
-## Core ConceptGitor wants to make a static binary git mirroring cli tool possible.
+## Core Concept
+Gitor wants to make a static binary git mirroring cli tool possible.
 
 
 ## Communication
