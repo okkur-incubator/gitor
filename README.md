@@ -1,13 +1,11 @@
 # Gitor
 
-
 Git repository mirroring implemented in pure Go.
 
  [![state](https://img.shields.io/badge/state-unstable-blue.svg)]() [![release](https://img.shields.io/github/release/okkur/gitor.svg)](https://github.com/okkur/gitor/releases) [![license](https://img.shields.io/github/license/okkur/gitor.svg)](LICENSE)
 
 **NOTE: This is a work-in-progress, we do not consider it production ready. Use at your own risk.**
 
-# Gitor
 Mirror your repositories between Github, Gitlab or other platforms.
 Archive your projects, backup your dependencies or keep your forks up to date.
 
