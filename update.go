@@ -24,13 +24,18 @@ import (
 )
 
 func update(upstream string, branch string) error {
-
 	path := parseURL(upstream)
 
 	// We instance a new repository targeting the given path (the .git folder)
 	r, err := git.PlainInit(path, false)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+	}
+
+	fileSystemPath := parseFilesystemPath(path)
+	r, err = git.PlainOpen(fileSystemPath)
+	if err != nil {
+		log.Println(err)
 	}
 
 	// Get the working directory for the repository
@@ -44,7 +49,14 @@ func update(upstream string, branch string) error {
 
 	// Print the latest commit that was just pulled
 	ref, err := r.Head()
+	if err != nil {
+		log.Println(err)
+	}
+
 	commit, err := r.CommitObject(ref.Hash())
+	if err != nil {
+		log.Println(err)
+	}
 
 	fmt.Println(commit)
 	return nil
@@ -57,6 +69,15 @@ func parseURL(upstream string) string {
 	}
 
 	result := strings.TrimSuffix(u.Host+u.Path, ".git")
-	println(result)
+	return result
+}
+
+func parseFilesystemPath(path string) string {
+	u, err := url.Parse(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	result := u.Host + u.Path
 	return result
 }
