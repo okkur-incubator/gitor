@@ -17,13 +17,15 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/url"
+	"strings"
 
 	git "gopkg.in/src-d/go-git.v4"
 )
 
 func update(upstream string, branch string) error {
 
-	path := upstream
+	path := parseURL(upstream)
 
 	// We instance a new repository targeting the given path (the .git folder)
 	r, err := git.PlainOpen(path)
@@ -46,4 +48,15 @@ func update(upstream string, branch string) error {
 
 	fmt.Println(commit)
 	return nil
+}
+
+func parseURL(upstream string) string {
+	u, err := url.Parse(upstream)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	result := strings.TrimSuffix(u.Host+u.Path, ".git")
+	println(result)
+	return result
 }
