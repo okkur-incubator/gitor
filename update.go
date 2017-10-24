@@ -63,13 +63,19 @@ func update(upstream string, branch string) error {
 }
 
 func parseURL(upstream string) string {
-	u, err := url.Parse(upstream)
-	if err != nil {
-		log.Fatal(err)
-	}
+	if strings.Contains(upstream, "git@github.com:") {
+		url := "github.com/"
+		result := strings.TrimPrefix(upstream, "git@github.com:")
+		return url + result
+	} else {
+		u, err := url.Parse(upstream)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	result := strings.TrimSuffix(u.Host+u.Path, ".git")
-	return result
+		result := strings.TrimSuffix(u.Host+u.Path, ".git")
+		return result
+	}
 }
 
 func parseFilesystemPath(path string) string {
