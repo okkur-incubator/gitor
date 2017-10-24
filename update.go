@@ -28,7 +28,7 @@ func update(upstream string, branch string) error {
 	path := parseURL(upstream)
 
 	// We instance a new repository targeting the given path (the .git folder)
-	r, err := git.PlainOpen(path)
+	r, err := git.PlainInit(path, false)
 	if err != nil {
 		log.Fatal(err)
 	}
