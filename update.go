@@ -19,12 +19,13 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"strconv"
 
 	git "gopkg.in/src-d/go-git.v4"
 )
 
 func update(upstream string, branch string) error {
-	path := parseURL(upstream)
+	path := extractPath(upstream)
 
 	// We instance a new repository targeting the given path (the .git folder)
 	r, err := git.PlainInit(path, false)
@@ -32,7 +33,7 @@ func update(upstream string, branch string) error {
 		log.Println(err)
 	}
 
-	fileSystemPath := parseFilesystemPath(path)
+	fileSystemPath := path
 	r, err = git.PlainOpen(fileSystemPath)
 	if err != nil {
 		log.Println(err)
@@ -62,28 +63,38 @@ func update(upstream string, branch string) error {
 	return nil
 }
 
-func parseURL(upstream string) string {
-	if strings.Contains(upstream, "git@github.com:") {
-		url := "github.com/"
-		result := strings.TrimPrefix(upstream, "git@github.com:")
-		return url + result
-	} else {
-		u, err := url.Parse(upstream)
-		if err != nil {
-			log.Fatal(err)
-		}
+func extractPath(upstream string) string {
+	sshS := "ssh://"
+	stSet := strings.Contains(upstream, "https://")
+	sSet := strings.Contains(upstream, "http://")
+	ssSet := strings.Contains(upstream, "ssh://")
+	cSet := strings.ContainsAny(upstream, ":")
 
-		result := strings.TrimSuffix(u.Host+u.Path, ".git")
-		return result
+  // Handle ssh protocol - no protocol + colon suggests ssh
+	if !stSet && !sSet && !ssSet && cSet {
+		upstream = sshS + upstream
 	}
-}
 
-func parseFilesystemPath(path string) string {
-	u, err := url.Parse(path)
+	u, err := url.Parse(upstream)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	result := u.Host + u.Path
-	return result
+	path := strings.TrimSuffix(u.Path, ".git")
+	port := u.Port()
+
+  // Handle parsing of part of path as port
+	if _, err := strconv.Atoi(port); err != nil {
+		path = port + path
+  }
+
+  // Check for missing path separator
+  if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+
+	host := u.Hostname()
+	filePath := host + path
+
+	return filePath
 }

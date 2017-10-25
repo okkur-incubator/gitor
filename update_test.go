@@ -2,28 +2,43 @@ package main
 
 import "testing"
 
-func TestPlainInit(t *testing.T) {
-	path := parseURL("github.com/okkur/gitor.git")
-	if path != "github.com/okkur/gitor" {
-		t.Error("Expected github.com/okkur/gitor, got ", path)
-	}
-}
-func TestPlainInitWithHTTP(t *testing.T) {
-	path := parseURL("http://github.com/okkur/gitor.git")
+func TestExtractingPathPlainHTTP(t *testing.T) {
+	path := extractPath("github.com/okkur/gitor.git")
 	if path != "github.com/okkur/gitor" {
 		t.Error("Expected github.com/okkur/gitor, got ", path)
 	}
 }
 
-func TestPlainInitWithHTTPS(t *testing.T) {
-	path := parseURL("https://github.com/okkur/gitor.git")
+func TestExtractingPathHTTP(t *testing.T) {
+	path := extractPath("http://github.com/okkur/gitor.git")
 	if path != "github.com/okkur/gitor" {
 		t.Error("Expected github.com/okkur/gitor, got ", path)
 	}
 }
 
-func TestPlainInitExtractingHostAndPath(t *testing.T) {
-	path := parseURL("git@github.com:okkur/gitor")
+func TestExtractingPathHTTPPort(t *testing.T) {
+	path := extractPath("http://github.com:8080/okkur/gitor.git")
+	if path != "github.com/okkur/gitor" {
+		t.Error("Expected github.com/okkur/gitor, got ", path)
+	}
+}
+
+func TestExtractingPathHTTPS(t *testing.T) {
+	path := extractPath("https://github.com/okkur/gitor.git")
+	if path != "github.com/okkur/gitor" {
+		t.Error("Expected github.com/okkur/gitor, got ", path)
+	}
+}
+
+func TestExtractingPathPlainSSH(t *testing.T) {
+	path := extractPath("git@github.com:okkur/gitor")
+	if path != "github.com/okkur/gitor" {
+		t.Error("Expected github.com/okkur/gitor, got ", path)
+	}
+}
+
+func TestExtractingPathSSH(t *testing.T) {
+	path := extractPath("ssh://git@github.com:okkur/gitor")
 	if path != "github.com/okkur/gitor" {
 		t.Error("Expected github.com/okkur/gitor, got ", path)
 	}
