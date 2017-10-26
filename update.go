@@ -18,13 +18,35 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"strings"
 	"strconv"
+	"strings"
 
 	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
 func update(upstream string, branch string) error {
+
+	// Create a new repository
+	repo, err := git.Init(memory.NewStorage(), nil)
+
+	// Add a new remote, with the default fetch refspec
+	_, err = repo.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{upstream},
+	})
+
+	// Fetch using the new remote
+	err = repo.Fetch(&git.FetchOptions{
+		RemoteName: "origin",
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		log.Fatalf("%s is not a valid URL\n", upstream)
+	}
+
 	path := extractPath(upstream)
 
 	// We instance a new repository targeting the given path (the .git folder)
@@ -70,7 +92,7 @@ func extractPath(upstream string) string {
 	ssSet := strings.Contains(upstream, "ssh://")
 	cSet := strings.ContainsAny(upstream, ":")
 
-  // Handle ssh protocol - no protocol + colon suggests ssh
+	// Handle ssh protocol - no protocol + colon suggests ssh
 	if !stSet && !sSet && !ssSet && cSet {
 		upstream = sshS + upstream
 	}
@@ -83,18 +105,19 @@ func extractPath(upstream string) string {
 	path := strings.TrimSuffix(u.Path, ".git")
 	port := u.Port()
 
-  // Handle parsing of part of path as port
+	// Handle parsing of part of path as port
 	if _, err := strconv.Atoi(port); err != nil {
 		path = port + path
-  }
+	}
 
-  // Check for missing path separator
-  if !strings.HasPrefix(path, "/") {
+	// Check for missing path separator
+	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
 
 	host := u.Hostname()
 	filePath := host + path
 
+	fmt.Println(filePath)
 	return filePath
 }
