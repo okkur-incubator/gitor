@@ -29,16 +29,16 @@ import (
 func update(upstream string, branch string) error {
 
 	// Create a new repository
-	repo, err := git.Init(memory.NewStorage(), nil)
+	r1, err := git.Init(memory.NewStorage(), nil)
 
 	// Add a new remote, with the default fetch refspec
-	_, err = repo.CreateRemote(&config.RemoteConfig{
+	_, err = r1.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{upstream},
 	})
 
 	// Fetch using the new remote
-	err = repo.Fetch(&git.FetchOptions{
+	err = r1.Fetch(&git.FetchOptions{
 		RemoteName: "origin",
 	})
 
@@ -67,8 +67,20 @@ func update(upstream string, branch string) error {
 		log.Fatal(err)
 	}
 
+	// Create a new repository
+	r2, err := git.Init(memory.NewStorage(), nil)
+
+	// Add a new remote, with the default fetch refspec
+	_, err = r2.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{upstream},
+	})
+
 	// Pull the latest changes from the origin remote and merge into the current branch
-	err = w.Pull(&git.PullOptions{RemoteName: upstream})
+	err = w.Pull(&git.PullOptions{RemoteName: "origin"})
+	if err != nil {
+		log.Println(err)
+	}
 
 	// Print the latest commit that was just pulled
 	ref, err := r.Head()
