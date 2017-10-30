@@ -70,16 +70,6 @@ func update(upstream string, branch string) error {
 		URLs: []string{upstream},
 	})
 
-	// Fetch using the new remote
-	err = r2.Fetch(&git.FetchOptions{
-		RemoteName: "origin",
-	})
-
-	if err != nil {
-		fmt.Println(err)
-		log.Fatalf("%s is not a valid URL\n", upstream)
-	}
-
 	// Get the working directory for the repository
 	w, err := r2.Worktree()
 	if err != nil {
