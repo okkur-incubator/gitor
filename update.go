@@ -61,9 +61,6 @@ func update(upstream string, branch string) error {
 		log.Println(err)
 	}
 
-	// Create a new repository
-	r2, err = git.Init(memory.NewStorage(), nil)
-
 	// Add a new remote, with the default fetch refspec
 	_, err = r2.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
