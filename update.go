@@ -91,6 +91,18 @@ func update(upstream string, branch string) error {
 	}
 
 	fmt.Println(commit)
+
+	r2, err = git.PlainOpen(path)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// push using default options
+	err = r2.Push(&git.PushOptions{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return nil
 }
 
