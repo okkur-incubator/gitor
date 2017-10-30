@@ -29,16 +29,16 @@ import (
 func update(upstream string, branch string) error {
 
 	// Create a new repository
-	r, err := git.Init(memory.NewStorage(), nil)
+	r1, err := git.Init(memory.NewStorage(), nil)
 
 	// Add a new remote, with the default fetch refspec
-	_, err = r.CreateRemote(&config.RemoteConfig{
+	_, err = r1.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{upstream},
 	})
 
 	// Fetch using the new remote
-	err = r.Fetch(&git.FetchOptions{
+	err = r1.Fetch(&git.FetchOptions{
 		RemoteName: "origin",
 	})
 
@@ -50,28 +50,38 @@ func update(upstream string, branch string) error {
 	path := extractPath(upstream)
 
 	// We instance a new repository targeting the given path (the .git folder)
-	r, err = git.PlainInit(path, false)
+	r2, err := git.PlainInit(path, false)
 	if err != nil {
 		log.Println(err)
 	}
 
 	fileSystemPath := path
-	r, err = git.PlainOpen(fileSystemPath)
+	r2, err = git.PlainOpen(fileSystemPath)
 	if err != nil {
 		log.Println(err)
 	}
 
 	// Create a new repository
-	r, err = git.Init(memory.NewStorage(), nil)
+	r2, err = git.Init(memory.NewStorage(), nil)
 
 	// Add a new remote, with the default fetch refspec
-	_, err = r.CreateRemote(&config.RemoteConfig{
+	_, err = r2.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{upstream},
 	})
 
+	// Fetch using the new remote
+	err = r2.Fetch(&git.FetchOptions{
+		RemoteName: "origin",
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		log.Fatalf("%s is not a valid URL\n", upstream)
+	}
+
 	// Get the working directory for the repository
-	w, err := r.Worktree()
+	w, err := r2.Worktree()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,12 +93,12 @@ func update(upstream string, branch string) error {
 	}
 
 	// Print the latest commit that was just pulled
-	ref, err := r.Head()
+	ref, err := r2.Head()
 	if err != nil {
 		log.Println(err)
 	}
 
-	commit, err := r.CommitObject(ref.Hash())
+	commit, err := r2.CommitObject(ref.Hash())
 	if err != nil {
 		log.Println(err)
 	}
