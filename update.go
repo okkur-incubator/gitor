@@ -97,8 +97,17 @@ func update(upstream string, branch string) error {
 		log.Println(err)
 	}
 
+	// Create a new repository
+	r3, err := git.Init(memory.NewStorage(), nil)
+
+	// Add a new remote, with the default fetch refspec
+	_, err = r3.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{upstream},
+	})
+
 	// push using default options
-	err = r2.Push(&git.PushOptions{})
+	err = r3.Push(&git.PushOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}
