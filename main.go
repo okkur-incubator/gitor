@@ -25,16 +25,20 @@ func main() {
 	var (
 		upstream string
 		branch   string
+		username string
+		password string
 	)
 
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
 	flag.StringVar(&branch, "branch", "master", "specifies branch")
+	flag.StringVar(&username, "username", username, "specifies username")
+	flag.StringVar(&password, "password", password, "specifies password")
 	flag.Usage = usage
 
 	flag.Parse()
 	command := flag.Args()[0]
 	if command == "update" {
-		update(upstream, branch)
+		update(upstream, branch, username, password)
 	}
 }
 

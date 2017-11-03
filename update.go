@@ -23,10 +23,11 @@ import (
 
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
-func update(upstream string, branch string) error {
+func update(upstream string, branch string, username string, password string) error {
 
 	// Create a new repository
 	r1, err := git.Init(memory.NewStorage(), nil)
@@ -73,8 +74,10 @@ func update(upstream string, branch string) error {
 		log.Fatal(err)
 	}
 
+	auth := http.NewBasicAuth(username, password)
+
 	// Pull the latest changes from the origin remote and merge into the current branch
-	err = w.Pull(&git.PullOptions{RemoteName: "origin"})
+	err = w.Pull(&git.PullOptions{Auth: auth})
 	if err != nil {
 		log.Println(err)
 	}
@@ -107,7 +110,7 @@ func update(upstream string, branch string) error {
 	})
 
 	// push using default options
-	err = r3.Push(&git.PushOptions{})
+	err = r3.Push(&git.PushOptions{Auth: auth})
 	if err != nil {
 		log.Fatal(err)
 	}
