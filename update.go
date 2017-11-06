@@ -29,7 +29,7 @@ import (
 
 func update(upstream string, branch string, username string, password string) error {
 
-	// Create a new repository
+	// Create a new remote
 	r1 := newRemote(upstream)
 
 	// Fetch using the new remote
@@ -94,7 +94,7 @@ func update(upstream string, branch string, username string, password string) er
 		log.Println(err)
 	}
 
-	// Create a new repository
+	// Create a new remote
 	r3 := newRemote(upstream)
 
 	// push using default options or using authentication for https
