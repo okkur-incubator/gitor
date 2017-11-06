@@ -30,16 +30,10 @@ import (
 func update(upstream string, branch string, username string, password string) error {
 
 	// Create a new repository
-	r1, err := git.Init(memory.NewStorage(), nil)
-
-	// Add a new remote, with the default fetch refspec
-	_, err = r1.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
-		URLs: []string{upstream},
-	})
+	r1 := newRemote(upstream)
 
 	// Fetch using the new remote
-	err = r1.Fetch(&git.FetchOptions{
+	err := r1.Fetch(&git.FetchOptions{
 		RemoteName: "origin",
 	})
 
@@ -101,13 +95,7 @@ func update(upstream string, branch string, username string, password string) er
 	}
 
 	// Create a new repository
-	r3, err := git.Init(memory.NewStorage(), nil)
-
-	// Add a new remote, with the default fetch refspec
-	_, err = r3.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
-		URLs: []string{upstream},
-	})
+	r3 := newRemote(upstream)
 
 	// push using default options
 	err = r3.Push(&git.PushOptions{Auth: auth})
@@ -153,4 +141,20 @@ func extractPath(upstream string) string {
 
 	fmt.Println(filePath)
 	return filePath
+}
+
+func newRemote(upstream string) *git.Repository {
+	// Create a new repository
+	r, err := git.Init(memory.NewStorage(), nil)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Add a new remote, with the default fetch refspec
+	_, err = r.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{upstream},
+	})
+
+	return r
 }
