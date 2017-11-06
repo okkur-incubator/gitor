@@ -97,10 +97,15 @@ func update(upstream string, branch string, username string, password string) er
 	// Create a new repository
 	r3 := newRemote(upstream)
 
-	// push using default options
-	err = r3.Push(&git.PushOptions{Auth: auth})
-	if err != nil {
-		log.Fatal(err)
+	// push using default options or using authentication for https
+	switch {
+	case strings.Contains(upstream, "https://"):
+		err = r3.Push(&git.PushOptions{Auth: auth})
+	default:
+		err = r3.Push(&git.PushOptions{})
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return nil
