@@ -103,11 +103,10 @@ func update(upstream string, branch string, username string, password string) er
 		err = r3.Push(&git.PushOptions{Auth: auth})
 	default:
 		err = r3.Push(&git.PushOptions{})
-		if err != nil {
-			log.Fatal(err)
-		}
 	}
-
+	if err != nil {
+		log.Fatal(err)
+	}
 	return nil
 }
 
