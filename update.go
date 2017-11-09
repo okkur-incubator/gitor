@@ -21,18 +21,21 @@ import (
 	"strconv"
 	"strings"
 
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
 func update(upstream string, branch string, username string, password string) error {
 
-	// auth := http.NewBasicAuth(username, password)
+	auth := http.NewBasicAuth(username, password)
 	path := extractPath(upstream)
 
 	// Create in memory repository, create remote and validate URL
-	r, err := validateUpstream(upstream)
+	r, err := validateUpstream(upstream, username, password)
 
 	fileSystemPath := path
 	r, err = git.PlainOpen(fileSystemPath)
@@ -54,6 +57,9 @@ func update(upstream string, branch string, username string, password string) er
 
 	// Pull using default options
 	err = w.Pull(&git.PullOptions{})
+	if err == transport.ErrAuthenticationRequired {
+		err = w.Pull(&git.PullOptions{Auth: auth})
+	}
 	if err != nil {
 		log.Println(err)
 	}
@@ -77,6 +83,9 @@ func update(upstream string, branch string, username string, password string) er
 
 	// Push using default options
 	err = r.Push(&git.PushOptions{})
+	if err == transport.ErrAuthenticationRequired {
+		err = r.Push(&git.PushOptions{Auth: auth})
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -117,11 +126,10 @@ func extractPath(upstream string) string {
 	host := u.Hostname()
 	filePath := host + path
 
-	fmt.Println(filePath)
 	return filePath
 }
 
-func validateUpstream(upstream string) (*git.Repository, error) {
+func validateUpstream(upstream string, username string, password string) (*git.Repository, error) {
 	// Create a new repository
 	r, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
@@ -134,10 +142,18 @@ func validateUpstream(upstream string) (*git.Repository, error) {
 		URLs: []string{upstream},
 	})
 
+	auth := http.NewBasicAuth(username, password)
+
 	// Fetch using the new remote
 	err = r.Fetch(&git.FetchOptions{
 		RemoteName: "origin",
 	})
+	if err == transport.ErrAuthenticationRequired {
+		err = r.Fetch(&git.FetchOptions{
+			RemoteName: "origin",
+			Auth:       auth,
+		})
+	}
 	if err != nil {
 		fmt.Println(err)
 		log.Fatalf("%s is not a valid URL\n", upstream)
