@@ -21,22 +21,42 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/src-d/go-git.v4/plumbing/transport"
-
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
 func update(upstream string, branch string, username string, password string) error {
 
-	auth := http.NewBasicAuth(username, password)
+	// auth := http.NewBasicAuth(username, password)
 	path := extractPath(upstream)
 
 	// Create in memory repository, create remote and validate URL
-	r, err := validateUpstream(upstream, auth, path)
+	r, err := validateUpstream(upstream)
 
+	fileSystemPath := path
+	r, err = git.PlainOpen(fileSystemPath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Add a new remote, with the default fetch refspec
+	_, err = r.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{upstream},
+	})
+
+	// Get the working directory for the repository
+	w, err := r.Worktree()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Pull using default options
+	err = w.Pull(&git.PullOptions{})
+	if err != nil {
+		log.Println(err)
+	}
 	// Print the latest commit that was just pulled
 	ref, err := r.Head()
 	if err != nil {
@@ -55,13 +75,10 @@ func update(upstream string, branch string, username string, password string) er
 		log.Println(err)
 	}
 
-	// Check if authentication is required, then push repository to its default remote (origin)
-	err = push(r)
+	// Push using default options
+	err = r.Push(&git.PushOptions{})
 	if err != nil {
 		log.Fatal(err)
-	}
-	if err == transport.ErrAuthenticationRequired {
-		err = r.Push(&git.PushOptions{Auth: auth})
 	}
 
 	return nil
@@ -104,83 +121,27 @@ func extractPath(upstream string) string {
 	return filePath
 }
 
-func validateUpstream(upstream string, auth transport.AuthMethod, path string) (*git.Repository, error) {
+func validateUpstream(upstream string) (*git.Repository, error) {
 	// Create a new repository
-	r1, err := git.Init(memory.NewStorage(), nil)
+	r, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
 		log.Println(err)
 	}
 
 	// Add a new remote, with the default fetch refspec
-	_, err = r1.CreateRemote(&config.RemoteConfig{
+	_, err = r.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{upstream},
 	})
 
 	// Fetch using the new remote
-	err = r1.Fetch(&git.FetchOptions{
+	err = r.Fetch(&git.FetchOptions{
 		RemoteName: "origin",
 	})
-
 	if err != nil {
 		fmt.Println(err)
 		log.Fatalf("%s is not a valid URL\n", upstream)
 	}
 
-	// We instance a new repository targeting the given path (the .git folder)
-	r2, err := git.PlainInit(path, false)
-	if err != nil {
-		log.Println(err)
-	}
-
-	fileSystemPath := path
-	r2, err = git.PlainOpen(fileSystemPath)
-	if err != nil {
-		log.Println(err)
-	}
-
-	// Add a new remote, with the default fetch refspec
-	_, err = r2.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
-		URLs: []string{upstream},
-	})
-
-	// Get the working directory for the repository
-	w, err := r2.Worktree()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Check if authentication is required, then pull the latest changes from the origin remote and merge into the current branch
-	err = pull(w)
-	if err != nil {
-		log.Println(err)
-	}
-	if err == transport.ErrAuthenticationRequired {
-		err = w.Pull(&git.PullOptions{Auth: auth})
-	}
-
-	return r2, nil
-}
-
-func pull(w *git.Worktree) error {
-
-	// Pull using default options
-	err := w.Pull(&git.PullOptions{})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func push(r *git.Repository) error {
-
-	// Push using default options
-	err := r.Push(&git.PushOptions{})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r, nil
 }
