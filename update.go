@@ -55,7 +55,7 @@ func update(upstream string, branch string, username string, password string) er
 		log.Println(err)
 	}
 
-	// Push using default options or using authentication for https
+	// Check if authentication is required, then push repository to its default remote (origin)
 	err = push(r)
 	if err != nil {
 		log.Fatal(err)
@@ -151,7 +151,7 @@ func validateUpstream(upstream string, auth transport.AuthMethod, path string) (
 		log.Fatal(err)
 	}
 
-	// Check if authentication required, pull the latest changes from the origin remote and merge into the current branch
+	// Check if authentication is required, then pull the latest changes from the origin remote and merge into the current branch
 	err = pull(w)
 	if err != nil {
 		log.Println(err)
@@ -164,6 +164,8 @@ func validateUpstream(upstream string, auth transport.AuthMethod, path string) (
 }
 
 func pull(w *git.Worktree) error {
+
+	// Pull using default options
 	err := w.Pull(&git.PullOptions{})
 	if err != nil {
 		return err
