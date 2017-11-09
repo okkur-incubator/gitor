@@ -55,16 +55,15 @@ func update(upstream string, branch string, username string, password string) er
 		log.Println(err)
 	}
 
-	// push using default options or using authentication for https
-	switch {
-	case strings.Contains(upstream, "https://"):
-		err = r.Push(&git.PushOptions{Auth: auth})
-	default:
-		err = r.Push(&git.PushOptions{})
-	}
+	// Push using default options or using authentication for https
+	err = push(r)
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err == transport.ErrAuthenticationRequired {
+		err = r.Push(&git.PushOptions{Auth: auth})
+	}
+
 	return nil
 }
 
@@ -152,11 +151,34 @@ func validateUpstream(upstream string, auth transport.AuthMethod, path string) (
 		log.Fatal(err)
 	}
 
-	// Pull the latest changes from the origin remote and merge into the current branch
-	err = w.Pull(&git.PullOptions{Auth: auth})
+	// Check if authentication required, pull the latest changes from the origin remote and merge into the current branch
+	err = pull(w)
 	if err != nil {
 		log.Println(err)
 	}
+	if err == transport.ErrAuthenticationRequired {
+		err = w.Pull(&git.PullOptions{Auth: auth})
+	}
 
 	return r2, nil
+}
+
+func pull(w *git.Worktree) error {
+	err := w.Pull(&git.PullOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func push(r *git.Repository) error {
+
+	// Push using default options
+	err := r.Push(&git.PushOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
