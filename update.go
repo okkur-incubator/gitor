@@ -29,80 +29,37 @@ import (
 
 func update(upstream string, branch string, username string, password string) error {
 
-	// Create a new remote
-	r1 := newRemote(upstream)
-
-	// Fetch using the new remote
-	err := r1.Fetch(&git.FetchOptions{
-		RemoteName: "origin",
-	})
-
-	if err != nil {
-		fmt.Println(err)
-		log.Fatalf("%s is not a valid URL\n", upstream)
-	}
-
-	path := extractPath(upstream)
-
-	// We instance a new repository targeting the given path (the .git folder)
-	r2, err := git.PlainInit(path, false)
-	if err != nil {
-		log.Println(err)
-	}
-
-	fileSystemPath := path
-	r2, err = git.PlainOpen(fileSystemPath)
-	if err != nil {
-		log.Println(err)
-	}
-
-	// Add a new remote, with the default fetch refspec
-	_, err = r2.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
-		URLs: []string{upstream},
-	})
-
-	// Get the working directory for the repository
-	w, err := r2.Worktree()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	auth := http.NewBasicAuth(username, password)
-
-	// Pull the latest changes from the origin remote and merge into the current branch
-	err = w.Pull(&git.PullOptions{Auth: auth})
-	if err != nil {
-		log.Println(err)
-	}
+	// Create in memory repository, create remote and validate URL
+	r, err := validateUpstream(upstream, username, password)
 
 	// Print the latest commit that was just pulled
-	ref, err := r2.Head()
+	ref, err := r.Head()
 	if err != nil {
 		log.Println(err)
 	}
 
-	commit, err := r2.CommitObject(ref.Hash())
+	commit, err := r.CommitObject(ref.Hash())
 	if err != nil {
 		log.Println(err)
 	}
 
 	fmt.Println(commit)
 
-	r2, err = git.PlainOpen(path)
+	path := extractPath(upstream)
+
+	r, err = git.PlainOpen(path)
 	if err != nil {
 		log.Println(err)
 	}
 
-	// Create a new remote
-	r3 := newRemote(upstream)
+	auth := http.NewBasicAuth(username, password)
 
 	// push using default options or using authentication for https
 	switch {
 	case strings.Contains(upstream, "https://"):
-		err = r3.Push(&git.PushOptions{Auth: auth})
+		err = r.Push(&git.PushOptions{Auth: auth})
 	default:
-		err = r3.Push(&git.PushOptions{})
+		err = r.Push(&git.PushOptions{})
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -147,18 +104,62 @@ func extractPath(upstream string) string {
 	return filePath
 }
 
-func newRemote(upstream string) *git.Repository {
+func validateUpstream(upstream string, username string, password string) (*git.Repository, error) {
 	// Create a new repository
-	r, err := git.Init(memory.NewStorage(), nil)
+	r1, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
 		log.Println(err)
 	}
 
 	// Add a new remote, with the default fetch refspec
-	_, err = r.CreateRemote(&config.RemoteConfig{
+	_, err = r1.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{upstream},
 	})
 
-	return r
+	// Fetch using the new remote
+	err = r1.Fetch(&git.FetchOptions{
+		RemoteName: "origin",
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		log.Fatalf("%s is not a valid URL\n", upstream)
+	}
+
+	path := extractPath(upstream)
+
+	// We instance a new repository targeting the given path (the .git folder)
+	r2, err := git.PlainInit(path, false)
+	if err != nil {
+		log.Println(err)
+	}
+
+	fileSystemPath := path
+	r2, err = git.PlainOpen(fileSystemPath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Add a new remote, with the default fetch refspec
+	_, err = r2.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{upstream},
+	})
+
+	// Get the working directory for the repository
+	w, err := r2.Worktree()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth := http.NewBasicAuth(username, password)
+
+	// Pull the latest changes from the origin remote and merge into the current branch
+	err = w.Pull(&git.PullOptions{Auth: auth})
+	if err != nil {
+		log.Println(err)
+	}
+
+	return r2, nil
 }
