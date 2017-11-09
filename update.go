@@ -21,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
@@ -29,8 +31,11 @@ import (
 
 func update(upstream string, branch string, username string, password string) error {
 
+	auth := http.NewBasicAuth(username, password)
+	path := extractPath(upstream)
+
 	// Create in memory repository, create remote and validate URL
-	r, err := validateUpstream(upstream, username, password)
+	r, err := validateUpstream(upstream, auth, path)
 
 	// Print the latest commit that was just pulled
 	ref, err := r.Head()
@@ -45,14 +50,10 @@ func update(upstream string, branch string, username string, password string) er
 
 	fmt.Println(commit)
 
-	path := extractPath(upstream)
-
 	r, err = git.PlainOpen(path)
 	if err != nil {
 		log.Println(err)
 	}
-
-	auth := http.NewBasicAuth(username, password)
 
 	// push using default options or using authentication for https
 	switch {
@@ -104,7 +105,7 @@ func extractPath(upstream string) string {
 	return filePath
 }
 
-func validateUpstream(upstream string, username string, password string) (*git.Repository, error) {
+func validateUpstream(upstream string, auth transport.AuthMethod, path string) (*git.Repository, error) {
 	// Create a new repository
 	r1, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
@@ -126,8 +127,6 @@ func validateUpstream(upstream string, username string, password string) (*git.R
 		fmt.Println(err)
 		log.Fatalf("%s is not a valid URL\n", upstream)
 	}
-
-	path := extractPath(upstream)
 
 	// We instance a new repository targeting the given path (the .git folder)
 	r2, err := git.PlainInit(path, false)
@@ -152,8 +151,6 @@ func validateUpstream(upstream string, username string, password string) (*git.R
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	auth := http.NewBasicAuth(username, password)
 
 	// Pull the latest changes from the origin remote and merge into the current branch
 	err = w.Pull(&git.PullOptions{Auth: auth})
