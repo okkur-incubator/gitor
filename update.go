@@ -57,11 +57,13 @@ func update(upstream string, branch string, username string, password string) er
 
 	// Pull using default options, if authentication required error present, pull using auth
 	err = w.Pull(&git.PullOptions{})
-	if err == transport.ErrAuthenticationRequired {
-		err = w.Pull(&git.PullOptions{Auth: auth})
-	}
 	if err != nil {
-		log.Println(err)
+		switch err {
+		case transport.ErrAuthenticationRequired:
+			err = w.Pull(&git.PullOptions{Auth: auth})
+		default:
+			log.Println(err)
+		}
 	}
 
 	// Print the latest commit that was just pulled
@@ -84,11 +86,13 @@ func update(upstream string, branch string, username string, password string) er
 
 	// Push using default options, if authentication required error present, push using auth
 	err = r.Push(&git.PushOptions{})
-	if err == transport.ErrAuthenticationRequired {
-		err = r.Push(&git.PushOptions{Auth: auth})
-	}
 	if err != nil {
-		log.Fatal(err)
+		switch err {
+		case transport.ErrAuthenticationRequired:
+			err = r.Push(&git.PushOptions{Auth: auth})
+		default:
+			log.Fatal(err)
+		}
 	}
 
 	return nil
@@ -149,15 +153,17 @@ func validateUpstream(upstream string, username string, password string) (*git.R
 	err = r.Fetch(&git.FetchOptions{
 		RemoteName: "origin",
 	})
-	if err == transport.ErrAuthenticationRequired {
-		err = r.Fetch(&git.FetchOptions{
-			RemoteName: "origin",
-			Auth:       auth,
-		})
-	}
 	if err != nil {
-		fmt.Println(err)
-		log.Fatalf("%s is not a valid URL\n", upstream)
+		switch err {
+		case transport.ErrAuthenticationRequired:
+			err = r.Fetch(&git.FetchOptions{
+				RemoteName: "origin",
+				Auth:       auth,
+			})
+		default:
+			fmt.Println(err)
+			log.Fatalf("%s is not a valid URL\n", upstream)
+		}
 	}
 
 	return r, nil
