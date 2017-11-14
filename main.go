@@ -38,7 +38,7 @@ func main() {
 	flag.Parse()
 
 	switch {
-	case len(os.Args) > 0 && os.Args[0] == ("update"):
+	case len(os.Args) > 0:
 		command := flag.Args()[0]
 		if command == "update" {
 			update(upstream, branch, username, token)
