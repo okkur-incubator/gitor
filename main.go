@@ -36,9 +36,15 @@ func main() {
 	flag.Usage = usage
 
 	flag.Parse()
-	command := flag.Args()[0]
-	if command == "update" {
-		update(upstream, branch, username, token)
+
+	switch {
+	case len(os.Args) > 0 && os.Args[0] == ("update"):
+		command := flag.Args()[0]
+		if command == "update" {
+			update(upstream, branch, username, token)
+		}
+	default:
+		usage()
 	}
 }
 
