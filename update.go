@@ -29,23 +29,23 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
-func update(upstream string, branch string, username string, password string) error {
+func update(upstream string, branch string, username string, token string) error {
 
 	// Validate URL
-	err := validateUpstream(upstream, username, password)
-  if err != nil {
+	err := validateUpstream(upstream, username, token)
+	if err != nil {
 		log.Println(err)
 	}
 
 	path := extractPath(upstream)
 
-  // Initialize non bare repo
+	// Initialize non bare repo
 	r, err := git.PlainInit(path, false)
-  if err != git.ErrRepositoryAlreadyExists && err != nil {
-    log.Fatal(err)
+	if err != git.ErrRepositoryAlreadyExists && err != nil {
+		log.Fatal(err)
 	}
 
-  // Open repo, if initialized
+	// Open repo, if initialized
 	r, err = git.PlainOpen(path)
 	if err != nil {
 		log.Println(err)
@@ -70,7 +70,7 @@ func update(upstream string, branch string, username string, password string) er
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
-			auth := http.NewBasicAuth(username, password)
+			auth := http.NewBasicAuth(username, token)
 			err = w.Pull(&git.PullOptions{Auth: auth})
 		default:
 			log.Println(err)
@@ -98,7 +98,7 @@ func update(upstream string, branch string, username string, password string) er
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
-			auth := http.NewBasicAuth(username, password)
+			auth := http.NewBasicAuth(username, token)
 			err = r.Push(&git.PushOptions{Auth: auth})
 		default:
 			log.Fatal(err)
@@ -144,7 +144,7 @@ func extractPath(upstream string) string {
 	return filePath
 }
 
-func validateUpstream(upstream string, username string, password string) error {
+func validateUpstream(upstream string, username string, token string) error {
 	// Create a temporary repository
 	r, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
@@ -157,7 +157,7 @@ func validateUpstream(upstream string, username string, password string) error {
 		URLs: []string{upstream},
 	})
 	if err != nil {
-    return err
+		return err
 	}
 
 	// Fetch using the new remote
@@ -167,14 +167,14 @@ func validateUpstream(upstream string, username string, password string) error {
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
-			auth := http.NewBasicAuth(username, password)
+			auth := http.NewBasicAuth(username, token)
 			err = r.Fetch(&git.FetchOptions{
 				RemoteName: git.DefaultRemoteName,
 				Auth:       auth,
 			})
 			if err != nil {
 				return err
-			} 
+			}
 		default:
 			return err
 		}
