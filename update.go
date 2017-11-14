@@ -72,6 +72,8 @@ func update(upstream string, branch string, username string, token string) error
 		case transport.ErrAuthenticationRequired:
 			auth := http.NewBasicAuth(username, token)
 			err = w.Pull(&git.PullOptions{Auth: auth})
+		case git.ErrIsBareRepository:
+			log.Fatal("upstream repository is empty")
 		default:
 			log.Println(err)
 		}
