@@ -91,7 +91,7 @@ func update(upstream string, branch string, username string, token string) error
 		log.Println(err)
 	}
 
-	fmt.Println(commit)
+	fmt.Printf("pulled: %s\n", commit.Hash)
 
 	// Push using default options
 	// If authentication required push using authentication
