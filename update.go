@@ -31,19 +31,29 @@ import (
 
 func update(upstream string, branch string, username string, password string) error {
 
-	// Create in memory repository, create remote and validate URL
-	r, err := validateUpstream(upstream, username, password)
+	// Validate URL
+	err := validateUpstream(upstream, username, password)
+  if err != nil {
+		log.Println(err)
+	}
 
 	path := extractPath(upstream)
-	fileSystemPath := path
-	r, err = git.PlainOpen(fileSystemPath)
+
+  // Initialize non bare repo
+	r, err := git.PlainInit(path, false)
+  if err != git.ErrRepositoryAlreadyExists && err != nil {
+    log.Fatal(err)
+	}
+
+  // Open repo, if initialized
+	r, err = git.PlainOpen(path)
 	if err != nil {
 		log.Println(err)
 	}
 
 	// Add a new remote, with the default fetch refspec
 	_, err = r.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
+		Name: git.DefaultRemoteName,
 		URLs: []string{upstream},
 	})
 
@@ -53,13 +63,14 @@ func update(upstream string, branch string, username string, password string) er
 		log.Fatal(err)
 	}
 
-	auth := http.NewBasicAuth(username, password)
-
-	// Pull using default options, if authentication required error present, pull using auth
+	// Pull using default options
+	// If authentication required pull using authentication
+	// TODO: needs switch for https:basicauth and ssh:keyauth
 	err = w.Pull(&git.PullOptions{})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
+			auth := http.NewBasicAuth(username, password)
 			err = w.Pull(&git.PullOptions{Auth: auth})
 		default:
 			log.Println(err)
@@ -67,6 +78,7 @@ func update(upstream string, branch string, username string, password string) er
 	}
 
 	// Print the latest commit that was just pulled
+	// TODO: simplify to only print commit hash "pulled: $hash"
 	ref, err := r.Head()
 	if err != nil {
 		log.Println(err)
@@ -79,16 +91,14 @@ func update(upstream string, branch string, username string, password string) er
 
 	fmt.Println(commit)
 
-	r, err = git.PlainOpen(path)
-	if err != nil {
-		log.Println(err)
-	}
-
-	// Push using default options, if authentication required error present, push using auth
+	// Push using default options
+	// If authentication required push using authentication
+	// TODO: needs switch for https:basicauth and ssh:keyauth
 	err = r.Push(&git.PushOptions{})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
+			auth := http.NewBasicAuth(username, password)
 			err = r.Push(&git.PushOptions{Auth: auth})
 		default:
 			log.Fatal(err)
@@ -134,37 +144,41 @@ func extractPath(upstream string) string {
 	return filePath
 }
 
-func validateUpstream(upstream string, username string, password string) (*git.Repository, error) {
-	// Create a new repository
+func validateUpstream(upstream string, username string, password string) error {
+	// Create a temporary repository
 	r, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 
 	// Add a new remote, with the default fetch refspec
 	_, err = r.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
+		Name: git.DefaultRemoteName,
 		URLs: []string{upstream},
 	})
+	if err != nil {
+    return err
+	}
 
-	auth := http.NewBasicAuth(username, password)
-
-	// Fetch using the new remote, if authentication required error present, fetch using auth
-	err = r.Fetch(&git.FetchOptions{
-		RemoteName: "origin",
-	})
+	// Fetch using the new remote
+	// With authentication error use authentication
+	// TODO: needs switch for https:basicauth and ssh:keyauth
+	err = r.Fetch(&git.FetchOptions{})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
+			auth := http.NewBasicAuth(username, password)
 			err = r.Fetch(&git.FetchOptions{
-				RemoteName: "origin",
+				RemoteName: git.DefaultRemoteName,
 				Auth:       auth,
 			})
+			if err != nil {
+				return err
+			} 
 		default:
-			fmt.Println(err)
-			log.Fatalf("%s is not a valid URL\n", upstream)
+			return err
 		}
 	}
 
-	return r, nil
+	return nil
 }
