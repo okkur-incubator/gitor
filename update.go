@@ -15,7 +15,6 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/url"
 	"strconv"
@@ -37,16 +36,16 @@ func update(upstream string, branch string, username string, token string, downs
 		log.Println(err)
 	}
 
-	upstreamPath := extractPath(upstream)
+	path := extractPath(upstream)
 
 	// Initialize non bare repo
-	r, err := git.PlainInit(upstreamPath, false)
+	r, err := git.PlainInit(path, false)
 	if err != git.ErrRepositoryAlreadyExists && err != nil {
 		log.Fatal(err)
 	}
 
 	// Open repo, if initialized
-	r, err = git.PlainOpen(upstreamPath)
+	r, err = git.PlainOpen(path)
 	if err != nil {
 		log.Println(err)
 	}
@@ -67,12 +66,15 @@ func update(upstream string, branch string, username string, token string, downs
 	// If authentication required pull using authentication
 	// TODO: needs switch for https:basicauth and ssh:keyauth
 	log.Printf("Pulling %s ...\n", upstream)
-	err = w.Pull(&git.PullOptions{})
+	err = w.Pull(&git.PullOptions{RemoteName: upstream})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
 			auth := http.NewBasicAuth(username, token)
-			err = w.Pull(&git.PullOptions{Auth: auth})
+			err = w.Pull(&git.PullOptions{
+				RemoteName: upstream,
+				Auth:       auth,
+			})
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -105,16 +107,14 @@ func update(upstream string, branch string, username string, token string, downs
 	// Push using default options
 	// If authentication required push using authentication
 	// TODO: needs switch for https:basicauth and ssh:keyauth
-	downstreamPath := extractPath(downstream)
-	fmt.Println(downstreamPath)
-	err = r.Push(&git.PushOptions{RemoteName: downstreamPath})
+	err = r.Push(&git.PushOptions{RemoteName: downstream})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
 			auth := http.NewBasicAuth(username, token)
 			err = r.Push(&git.PushOptions{
+				RemoteName: downstream,
 				Auth:       auth,
-				RemoteName: downstreamPath,
 			})
 			if err != nil {
 				log.Fatal(err)
