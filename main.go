@@ -43,25 +43,24 @@ func main() {
 
 	flag.Parse()
 
-	userEnv := os.Getenv("GITOR_USER")
-	if username == "" {
-		if userEnv == "" {
-			log.Fatal("username not set")
-		}
-		username = userEnv
-	}
-
-	tokenEnv := os.Getenv("GITOR_TOKEN")
-	if token == "" {
-		if tokenEnv == "" {
-			log.Fatal("token or password not set")
-		}
-		token = tokenEnv
-	}
-
 	command := flag.Arg(0)
 	switch {
 	case command == "update":
+		userEnv := os.Getenv("GITOR_USER")
+		if username == "" {
+			if userEnv == "" {
+				log.Fatal("username not set")
+			}
+			username = userEnv
+		}
+
+		tokenEnv := os.Getenv("GITOR_TOKEN")
+		if token == "" {
+			if tokenEnv == "" {
+				log.Fatal("token or password not set")
+			}
+			token = tokenEnv
+		}
 		update(upstream, branch, username, token, downstream)
 	default:
 		usage()
