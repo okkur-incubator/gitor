@@ -15,6 +15,7 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/url"
 	"strconv"
@@ -30,22 +31,22 @@ import (
 
 func update(upstream string, branch string, username string, token string, downstream string) error {
 
-	// Validate URL
+	// Validate upstream URL
 	err := validateRepo(upstream, username, token)
 	if err != nil {
 		log.Println(err)
 	}
 
-	path := extractPath(upstream)
+	upstreamPath := extractPath(upstream)
 
 	// Initialize non bare repo
-	r, err := git.PlainInit(path, false)
+	r, err := git.PlainInit(upstreamPath, false)
 	if err != git.ErrRepositoryAlreadyExists && err != nil {
 		log.Fatal(err)
 	}
 
 	// Open repo, if initialized
-	r, err = git.PlainOpen(path)
+	r, err = git.PlainOpen(upstreamPath)
 	if err != nil {
 		log.Println(err)
 	}
@@ -83,7 +84,6 @@ func update(upstream string, branch string, username string, token string, downs
 	}
 
 	// Print the latest commit that was just pulled
-	// TODO: simplify to only print commit hash "pulled: $hash"
 	ref, err := r.Head()
 	if err != nil {
 		log.Println(err)
@@ -96,15 +96,26 @@ func update(upstream string, branch string, username string, token string, downs
 
 	log.Printf("Pulled: %s\n", commit.Hash)
 
+	// Validate downstream URL
+	err = validateRepo(downstream, username, token)
+	if err != nil {
+		log.Println(err)
+	}
+
 	// Push using default options
 	// If authentication required push using authentication
 	// TODO: needs switch for https:basicauth and ssh:keyauth
-	err = r.Push(&git.PushOptions{})
+	downstreamPath := extractPath(downstream)
+	fmt.Println(downstreamPath)
+	err = r.Push(&git.PushOptions{RemoteName: downstreamPath})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
 			auth := http.NewBasicAuth(username, token)
-			err = r.Push(&git.PushOptions{Auth: auth})
+			err = r.Push(&git.PushOptions{
+				Auth:       auth,
+				RemoteName: downstreamPath,
+			})
 			if err != nil {
 				log.Fatal(err)
 			}
