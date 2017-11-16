@@ -29,10 +29,10 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
-func update(upstream string, branch string, username string, token string) error {
+func update(upstream string, branch string, username string, token string, downstream string) error {
 
 	// Validate URL
-	err := validateUpstream(upstream, username, token)
+	err := validateURL(upstream, username, token)
 	if err != nil {
 		log.Println(err)
 	}
@@ -66,6 +66,7 @@ func update(upstream string, branch string, username string, token string) error
 	// Pull using default options
 	// If authentication required pull using authentication
 	// TODO: needs switch for https:basicauth and ssh:keyauth
+	fmt.Printf("Pulling %s ...\n", upstream)
 	err = w.Pull(&git.PullOptions{})
 	if err != nil {
 		switch err {
@@ -94,7 +95,7 @@ func update(upstream string, branch string, username string, token string) error
 		log.Println(err)
 	}
 
-	fmt.Printf("pulled: %s\n", commit.Hash)
+	fmt.Printf("Pulled: %s\n", commit.Hash)
 
 	// Push using default options
 	// If authentication required push using authentication
@@ -112,6 +113,7 @@ func update(upstream string, branch string, username string, token string) error
 			log.Fatal(err)
 		}
 	}
+	fmt.Printf("Pushing to %s ...\n", downstream)
 
 	return nil
 }
@@ -152,7 +154,7 @@ func extractPath(upstream string) string {
 	return filePath
 }
 
-func validateUpstream(upstream string, username string, token string) error {
+func validateURL(url string, username string, token string) error {
 	// Create a temporary repository
 	r, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
@@ -162,7 +164,7 @@ func validateUpstream(upstream string, username string, token string) error {
 	// Add a new remote, with the default fetch refspec
 	_, err = r.CreateRemote(&config.RemoteConfig{
 		Name: git.DefaultRemoteName,
-		URLs: []string{upstream},
+		URLs: []string{url},
 	})
 	if err != nil {
 		return err
