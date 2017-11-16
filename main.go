@@ -17,35 +17,55 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 )
+
+const upstreamDefaultRemoteName string = "upstream"
+const downstreamDefaultRemoteName string = "downstream"
 
 func main() {
 
 	var (
-		upstream string
-		branch   string
-		username string
-		token    string
+		upstream   string
+		branch     string
+		username   string
+		token      string
+		downstream string
 	)
 
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
 	flag.StringVar(&branch, "branch", "master", "specifies branch")
 	flag.StringVar(&username, "username", username, "specifies username")
-	flag.StringVar(&token, "token", token, "specifies token/password")
+	flag.StringVar(&token, "token", token, "specifies token or password")
+	flag.StringVar(&downstream, "downstream", downstream, "specifies downstream")
 	flag.Usage = usage
 
 	flag.Parse()
 
+	command := flag.Arg(0)
 	switch {
-	case len(os.Args) > 2 && os.Args[2] == "update":
-		command := flag.Args()[0]
-		if command == "update" {
-			update(upstream, branch, username, token)
+	case command == "update":
+		userEnv := os.Getenv("GITOR_USER")
+		if username == "" {
+			if userEnv == "" {
+				log.Fatal("username not set")
+			}
+			username = userEnv
 		}
+
+		tokenEnv := os.Getenv("GITOR_TOKEN")
+		if token == "" {
+			if tokenEnv == "" {
+				log.Fatal("token or password not set")
+			}
+			token = tokenEnv
+		}
+		update(upstream, branch, username, token, downstream)
 	default:
 		usage()
 	}
+
 }
 
 func usage() {

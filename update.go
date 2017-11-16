@@ -15,7 +15,6 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/url"
 	"strconv"
@@ -29,10 +28,10 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
-func update(upstream string, branch string, username string, token string) error {
+func update(upstream string, branch string, username string, token string, downstream string) error {
 
-	// Validate URL
-	err := validateUpstream(upstream, username, token)
+	// Validate upstream URL
+	err := validateRepo(upstream, username, token)
 	if err != nil {
 		log.Println(err)
 	}
@@ -51,11 +50,12 @@ func update(upstream string, branch string, username string, token string) error
 		log.Println(err)
 	}
 
-	// Add a new remote, with the default fetch refspec
+	// Add a upstream remote
 	_, err = r.CreateRemote(&config.RemoteConfig{
-		Name: git.DefaultRemoteName,
+		Name: upstreamDefaultRemoteName,
 		URLs: []string{upstream},
 	})
+	// TODO: error check for remote
 
 	// Get the working directory for the repository
 	w, err := r.Worktree()
@@ -66,12 +66,19 @@ func update(upstream string, branch string, username string, token string) error
 	// Pull using default options
 	// If authentication required pull using authentication
 	// TODO: needs switch for https:basicauth and ssh:keyauth
-	err = w.Pull(&git.PullOptions{})
+	log.Printf("Pulling %s ...\n", upstream)
+	err = w.Pull(&git.PullOptions{RemoteName: upstreamDefaultRemoteName})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
 			auth := http.NewBasicAuth(username, token)
-			err = w.Pull(&git.PullOptions{Auth: auth})
+			err = w.Pull(&git.PullOptions{
+				RemoteName: upstreamDefaultRemoteName,
+				Auth:       auth,
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
 		case transport.ErrEmptyRemoteRepository:
 			log.Fatal("upstream repository is empty")
 		default:
@@ -80,7 +87,6 @@ func update(upstream string, branch string, username string, token string) error
 	}
 
 	// Print the latest commit that was just pulled
-	// TODO: simplify to only print commit hash "pulled: $hash"
 	ref, err := r.Head()
 	if err != nil {
 		log.Println(err)
@@ -91,17 +97,37 @@ func update(upstream string, branch string, username string, token string) error
 		log.Println(err)
 	}
 
-	fmt.Printf("pulled: %s\n", commit.Hash)
+	log.Printf("Pulled: %s\n", commit.Hash)
+
+	// Validate downstream URL
+	err = validateRepo(downstream, username, token)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Add a downstream remote
+	_, err = r.CreateRemote(&config.RemoteConfig{
+		Name: downstreamDefaultRemoteName,
+		URLs: []string{downstream},
+	})
+	// TODO: error check for remote
 
 	// Push using default options
 	// If authentication required push using authentication
 	// TODO: needs switch for https:basicauth and ssh:keyauth
-	err = r.Push(&git.PushOptions{})
+	log.Printf("Pushing to %s ...\n", downstream)
+	err = r.Push(&git.PushOptions{RemoteName: downstreamDefaultRemoteName})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
 			auth := http.NewBasicAuth(username, token)
-			err = r.Push(&git.PushOptions{Auth: auth})
+			err = r.Push(&git.PushOptions{
+				RemoteName: downstreamDefaultRemoteName,
+				Auth:       auth,
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
 		default:
 			log.Fatal(err)
 		}
@@ -110,19 +136,19 @@ func update(upstream string, branch string, username string, token string) error
 	return nil
 }
 
-func extractPath(upstream string) string {
+func extractPath(repo string) string {
 	sshS := "ssh://"
-	stSet := strings.Contains(upstream, "https://")
-	sSet := strings.Contains(upstream, "http://")
-	ssSet := strings.Contains(upstream, "ssh://")
-	cSet := strings.ContainsAny(upstream, ":")
+	stSet := strings.Contains(repo, "https://")
+	sSet := strings.Contains(repo, "http://")
+	ssSet := strings.Contains(repo, "ssh://")
+	cSet := strings.ContainsAny(repo, ":")
 
 	// Handle ssh protocol - no protocol + colon suggests ssh
 	if !stSet && !sSet && !ssSet && cSet {
-		upstream = sshS + upstream
+		repo = sshS + repo
 	}
 
-	u, err := url.Parse(upstream)
+	u, err := url.Parse(repo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -146,7 +172,7 @@ func extractPath(upstream string) string {
 	return filePath
 }
 
-func validateUpstream(upstream string, username string, token string) error {
+func validateRepo(repo string, username string, token string) error {
 	// Create a temporary repository
 	r, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
@@ -156,7 +182,7 @@ func validateUpstream(upstream string, username string, token string) error {
 	// Add a new remote, with the default fetch refspec
 	_, err = r.CreateRemote(&config.RemoteConfig{
 		Name: git.DefaultRemoteName,
-		URLs: []string{upstream},
+		URLs: []string{repo},
 	})
 	if err != nil {
 		return err
