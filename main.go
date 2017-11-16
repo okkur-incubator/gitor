@@ -43,14 +43,6 @@ func main() {
 
 	flag.Parse()
 
-	command := flag.Arg(0)
-	switch {
-	case command == "update":
-		update(upstream, branch, username, token, downstream)
-	default:
-		usage()
-	}
-
 	userEnv := os.Getenv("GITOR_USER")
 	if username == "" {
 		if userEnv == "" {
@@ -66,6 +58,15 @@ func main() {
 		}
 		token = tokenEnv
 	}
+
+	command := flag.Arg(0)
+	switch {
+	case command == "update":
+		update(upstream, branch, username, token, downstream)
+	default:
+		usage()
+	}
+
 }
 
 func usage() {
