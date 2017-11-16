@@ -21,6 +21,9 @@ import (
 	"os"
 )
 
+const upstreamDefaultRemoteName string = "upstream"
+const downstreamDefaultRemoteName string = "downstream"
+
 func main() {
 
 	var (
@@ -40,6 +43,14 @@ func main() {
 
 	flag.Parse()
 
+	command := flag.Arg(0)
+	switch {
+	case command == "update":
+		update(upstream, branch, username, token, downstream)
+	default:
+		usage()
+	}
+
 	userEnv := os.Getenv("GITOR_USER")
 	if username == "" {
 		if userEnv == "" {
@@ -54,14 +65,6 @@ func main() {
 			log.Fatal("token or password not set")
 		}
 		token = tokenEnv
-	}
-
-	command := flag.Arg(0)
-	switch {
-	case command == "update":
-		update(upstream, branch, username, token, downstream)
-	default:
-		usage()
 	}
 }
 

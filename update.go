@@ -50,11 +50,12 @@ func update(upstream string, branch string, username string, token string, downs
 		log.Println(err)
 	}
 
-	// Add a new remote, with the default fetch refspec
+	// Add a upstream remote
 	_, err = r.CreateRemote(&config.RemoteConfig{
-		Name: git.DefaultRemoteName,
+		Name: upstreamDefaultRemoteName,
 		URLs: []string{upstream},
 	})
+	// TODO: error check for remote
 
 	// Get the working directory for the repository
 	w, err := r.Worktree()
@@ -66,13 +67,13 @@ func update(upstream string, branch string, username string, token string, downs
 	// If authentication required pull using authentication
 	// TODO: needs switch for https:basicauth and ssh:keyauth
 	log.Printf("Pulling %s ...\n", upstream)
-	err = w.Pull(&git.PullOptions{RemoteName: upstream})
+	err = w.Pull(&git.PullOptions{RemoteName: upstreamDefaultRemoteName})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
 			auth := http.NewBasicAuth(username, token)
 			err = w.Pull(&git.PullOptions{
-				RemoteName: upstream,
+				RemoteName: upstreamDefaultRemoteName,
 				Auth:       auth,
 			})
 			if err != nil {
@@ -104,16 +105,24 @@ func update(upstream string, branch string, username string, token string, downs
 		log.Println(err)
 	}
 
+	// Add a downstream remote
+	_, err = r.CreateRemote(&config.RemoteConfig{
+		Name: downstreamDefaultRemoteName,
+		URLs: []string{downstream},
+	})
+	// TODO: error check for remote
+
 	// Push using default options
 	// If authentication required push using authentication
 	// TODO: needs switch for https:basicauth and ssh:keyauth
-	err = r.Push(&git.PushOptions{RemoteName: downstream})
+	log.Printf("Pushing to %s ...\n", downstream)
+	err = r.Push(&git.PushOptions{RemoteName: downstreamDefaultRemoteName})
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
 			auth := http.NewBasicAuth(username, token)
 			err = r.Push(&git.PushOptions{
-				RemoteName: downstream,
+				RemoteName: downstreamDefaultRemoteName,
 				Auth:       auth,
 			})
 			if err != nil {
@@ -123,7 +132,6 @@ func update(upstream string, branch string, username string, token string, downs
 			log.Fatal(err)
 		}
 	}
-	log.Printf("Pushing to %s ...\n", downstream)
 
 	return nil
 }
