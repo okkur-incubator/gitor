@@ -132,6 +132,7 @@ func update(upstream string, branch string, username string, token string, downs
 			log.Fatal(err)
 		}
 	}
+	log.Println("Repository successfully synced")
 
 	return nil
 }
