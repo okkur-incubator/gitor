@@ -17,6 +17,7 @@ package main
 import (
 	"log"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -25,6 +26,7 @@ import (
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
@@ -71,7 +73,8 @@ func update(upstream string, branch string, username string, token string, downs
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
-			auth := http.NewBasicAuth(username, token)
+			// auth := http.NewBasicAuth(username, token)
+			auth := authType(upstream, username, token)
 			err = w.Pull(&git.PullOptions{
 				RemoteName: upstreamDefaultRemoteName,
 				Auth:       auth,
@@ -120,7 +123,8 @@ func update(upstream string, branch string, username string, token string, downs
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
-			auth := http.NewBasicAuth(username, token)
+			// auth := http.NewBasicAuth(username, token)
+			auth := authType(downstream, username, token)
 			err = r.Push(&git.PushOptions{
 				RemoteName: downstreamDefaultRemoteName,
 				Auth:       auth,
@@ -196,7 +200,8 @@ func validateRepo(repo string, username string, token string) error {
 	if err != nil {
 		switch err {
 		case transport.ErrAuthenticationRequired:
-			auth := http.NewBasicAuth(username, token)
+			// auth := http.NewBasicAuth(username, token)
+			auth := authType(repo, username, token)
 			err = r.Fetch(&git.FetchOptions{
 				RemoteName: git.DefaultRemoteName,
 				Auth:       auth,
@@ -210,4 +215,26 @@ func validateRepo(repo string, username string, token string) error {
 	}
 
 	return nil
+}
+
+func authType(repo string, username string, token string) transport.AuthMethod {
+	var auth transport.AuthMethod
+	endpoint, err := transport.NewEndpoint(repo)
+	if err != nil {
+		log.Fatal(err)
+	}
+	switch {
+	case endpoint.Protocol() == "ssh":
+		user := os.Getenv("USER")
+		auth, err = ssh.NewSSHAgentAuth(user)
+		if err != nil {
+			log.Fatal(err)
+		}
+	case endpoint.Protocol() == "https":
+		auth = http.NewBasicAuth(username, token)
+	default:
+		auth = nil
+	}
+
+	return auth
 }
