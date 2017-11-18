@@ -19,6 +19,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 )
 
 const upstreamDefaultRemoteName string = "upstream"
@@ -47,7 +51,9 @@ func main() {
 	switch {
 	case command == "update":
 		username, token := checkEnvs(username, token)
-		update(upstream, branch, username, token, downstream)
+		upstreamAuth := authType(upstream, username, token)
+		downstreamAuth := authType(upstream, username, token)
+		update(upstream, branch, downstream, upstreamAuth, downstreamAuth)
 	default:
 		usage()
 	}
@@ -78,4 +84,26 @@ func checkEnvs(username string, token string) (string, string) {
 		token = tokenEnv
 	}
 	return username, token
+}
+
+func authType(repo string, username string, token string) transport.AuthMethod {
+	var auth transport.AuthMethod
+	endpoint, err := transport.NewEndpoint(repo)
+	if err != nil {
+		log.Fatal(err)
+	}
+	switch {
+	case endpoint.Protocol() == "ssh":
+		user := os.Getenv("USER")
+		auth, err = ssh.NewSSHAgentAuth(user)
+		if err != nil {
+			log.Fatal(err)
+		}
+	case endpoint.Protocol() == "https":
+		auth = http.NewBasicAuth(username, token)
+	default:
+		auth = nil
+	}
+
+	return auth
 }

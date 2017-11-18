@@ -17,7 +17,6 @@ package main
 import (
 	"log"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 
@@ -25,15 +24,14 @@ import (
 
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
-func update(upstream string, branch string, username string, token string, downstream string) error {
+func update(upstream string, branch string, downstream string,
+	upstreamAuth transport.AuthMethod, downstreamAuth transport.AuthMethod) error {
 
 	// Validate upstream URL
-	err := validateRepo(upstream, username, token)
+	err := validateRepo(upstream, upstreamAuth)
 	if err != nil {
 		log.Println(err)
 	}
@@ -67,21 +65,13 @@ func update(upstream string, branch string, username string, token string, downs
 
 	// Pull using default options
 	// If authentication required pull using authentication
-	// TODO: needs switch for https:basicauth and ssh:keyauth
 	log.Printf("Pulling %s ...\n", upstream)
-	err = w.Pull(&git.PullOptions{RemoteName: upstreamDefaultRemoteName})
+	err = w.Pull(&git.PullOptions{
+		RemoteName: upstreamDefaultRemoteName,
+		Auth:       upstreamAuth,
+	})
 	if err != nil {
 		switch err {
-		case transport.ErrAuthenticationRequired:
-			// auth := http.NewBasicAuth(username, token)
-			auth := authType(upstream, username, token)
-			err = w.Pull(&git.PullOptions{
-				RemoteName: upstreamDefaultRemoteName,
-				Auth:       auth,
-			})
-			if err != nil {
-				log.Fatal(err)
-			}
 		case transport.ErrEmptyRemoteRepository:
 			log.Fatal("upstream repository is empty")
 		default:
@@ -103,7 +93,7 @@ func update(upstream string, branch string, username string, token string, downs
 	log.Printf("Pulled: %s\n", commit.Hash)
 
 	// Validate downstream URL
-	err = validateRepo(downstream, username, token)
+	err = validateRepo(downstream, downstreamAuth)
 	if err != nil {
 		log.Println(err)
 	}
@@ -117,24 +107,14 @@ func update(upstream string, branch string, username string, token string, downs
 
 	// Push using default options
 	// If authentication required push using authentication
-	// TODO: needs switch for https:basicauth and ssh:keyauth
 	log.Printf("Pushing to %s ...\n", downstream)
-	err = r.Push(&git.PushOptions{RemoteName: downstreamDefaultRemoteName})
+	err = r.Push(&git.PushOptions{
+		RemoteName: downstreamDefaultRemoteName,
+		Auth:       downstreamAuth,
+	})
 	if err != nil {
-		switch err {
-		case transport.ErrAuthenticationRequired:
-			// auth := http.NewBasicAuth(username, token)
-			auth := authType(downstream, username, token)
-			err = r.Push(&git.PushOptions{
-				RemoteName: downstreamDefaultRemoteName,
-				Auth:       auth,
-			})
-			if err != nil {
-				log.Fatal(err)
-			}
-		default:
-			log.Fatal(err)
-		}
+		log.Fatal(err)
+
 	}
 	log.Println("Repository successfully synced")
 
@@ -177,7 +157,7 @@ func extractPath(repo string) string {
 	return filePath
 }
 
-func validateRepo(repo string, username string, token string) error {
+func validateRepo(repo string, upstreamAuth transport.AuthMethod) error {
 	// Create a temporary repository
 	r, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
@@ -194,47 +174,13 @@ func validateRepo(repo string, username string, token string) error {
 	}
 
 	// Fetch using the new remote
-	// With authentication error use authentication
-	// TODO: needs switch for https:basicauth and ssh:keyauth
-	err = r.Fetch(&git.FetchOptions{})
+	err = r.Fetch(&git.FetchOptions{
+		RemoteName: git.DefaultRemoteName,
+		Auth:       upstreamAuth,
+	})
 	if err != nil {
-		switch err {
-		case transport.ErrAuthenticationRequired:
-			// auth := http.NewBasicAuth(username, token)
-			auth := authType(repo, username, token)
-			err = r.Fetch(&git.FetchOptions{
-				RemoteName: git.DefaultRemoteName,
-				Auth:       auth,
-			})
-			if err != nil {
-				return err
-			}
-		default:
-			return err
-		}
+		return err
 	}
 
 	return nil
-}
-
-func authType(repo string, username string, token string) transport.AuthMethod {
-	var auth transport.AuthMethod
-	endpoint, err := transport.NewEndpoint(repo)
-	if err != nil {
-		log.Fatal(err)
-	}
-	switch {
-	case endpoint.Protocol() == "ssh":
-		user := os.Getenv("USER")
-		auth, err = ssh.NewSSHAgentAuth(user)
-		if err != nil {
-			log.Fatal(err)
-		}
-	case endpoint.Protocol() == "https":
-		auth = http.NewBasicAuth(username, token)
-	default:
-		auth = nil
-	}
-
-	return auth
 }
