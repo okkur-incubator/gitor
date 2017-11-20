@@ -64,6 +64,14 @@ func update(upstream string, branch string, downstream string,
 		}
 	}
 
+	pull(r, upstream, upstreamAuth)
+
+	push(r, downstream, downstreamAuth)
+
+	return nil
+}
+
+func pull(r *git.Repository, upstream string, upstreamAuth transport.AuthMethod) {
 	// Get the working directory for the repository
 	w, err := r.Worktree()
 	if err != nil {
@@ -98,9 +106,11 @@ func update(upstream string, branch string, downstream string,
 	}
 
 	log.Printf("Pulled: %s\n", commit.Hash)
+}
 
+func push(r *git.Repository, downstream string, downstreamAuth transport.AuthMethod) {
 	// Validate downstream URL
-	err = validateRepo(downstream, downstreamAuth)
+	err := validateRepo(downstream, downstreamAuth)
 	if err != nil {
 		log.Println(err)
 	}
@@ -129,16 +139,8 @@ func update(upstream string, branch string, downstream string,
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	log.Println("Repository successfully synced")
-
-	return nil
-}
-func pull() {
-
-}
-
-func push() {
-
 }
 
 func extractPath(repo string) string {
