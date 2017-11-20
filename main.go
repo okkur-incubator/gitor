@@ -19,6 +19,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 )
 
 const upstreamDefaultRemoteName string = "upstream"
@@ -36,8 +40,8 @@ func main() {
 
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
 	flag.StringVar(&branch, "branch", "master", "specifies branch")
-	flag.StringVar(&username, "username", username, "specifies username")
-	flag.StringVar(&token, "token", token, "specifies token or password")
+	flag.StringVar(&username, "username", "", "specifies username")
+	flag.StringVar(&token, "token", "", "specifies token or password")
 	flag.StringVar(&downstream, "downstream", downstream, "specifies downstream")
 	flag.Usage = usage
 
@@ -46,22 +50,10 @@ func main() {
 	command := flag.Arg(0)
 	switch {
 	case command == "update":
-		userEnv := os.Getenv("GITOR_USER")
-		if username == "" {
-			if userEnv == "" {
-				log.Fatal("username not set")
-			}
-			username = userEnv
-		}
-
-		tokenEnv := os.Getenv("GITOR_TOKEN")
-		if token == "" {
-			if tokenEnv == "" {
-				log.Fatal("token or password not set")
-			}
-			token = tokenEnv
-		}
-		update(upstream, branch, username, token, downstream)
+		username, token = checkEnvs(username, token)
+		upstreamAuth := authType(upstream, username, token)
+		downstreamAuth := authType(downstream, username, token)
+		update(upstream, branch, downstream, upstreamAuth, downstreamAuth)
 	default:
 		usage()
 	}
@@ -73,4 +65,45 @@ func usage() {
 	flag.PrintDefaults()
 	fmt.Fprintf(os.Stderr, "Subcommands: update\n")
 	os.Exit(2)
+}
+
+func checkEnvs(username string, token string) (string, string) {
+	userEnv := os.Getenv("GITOR_USER")
+	if username == "" {
+		if userEnv == "" {
+			log.Fatal("username not set")
+		}
+		username = userEnv
+	}
+
+	tokenEnv := os.Getenv("GITOR_TOKEN")
+	if token == "" {
+		if tokenEnv == "" {
+			log.Fatal("token or password not set")
+		}
+		token = tokenEnv
+	}
+	return username, token
+}
+
+func authType(repo string, username string, token string) transport.AuthMethod {
+	var auth transport.AuthMethod
+	endpoint, err := transport.NewEndpoint(repo)
+	if err != nil {
+		log.Fatal(err)
+	}
+	switch {
+	case endpoint.Protocol() == "ssh":
+		user := os.Getenv("USER")
+		auth, err = ssh.NewSSHAgentAuth(user)
+		if err != nil {
+			log.Fatal(err)
+		}
+	case endpoint.Protocol() == "https":
+		auth = http.NewBasicAuth(username, token)
+	default:
+		auth = nil
+	}
+
+	return auth
 }
