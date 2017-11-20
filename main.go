@@ -38,10 +38,10 @@ func main() {
 		downstream string
 	)
 
-	flag.StringVar(&upstream, "upstream", upstream, "specifies upstream")
+	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
 	flag.StringVar(&branch, "branch", "master", "specifies branch")
-	flag.StringVar(&username, "username", username, "specifies username")
-	flag.StringVar(&token, "token", token, "specifies token or password")
+	flag.StringVar(&username, "username", "", "specifies username")
+	flag.StringVar(&token, "token", "", "specifies token or password")
 	flag.StringVar(&downstream, "downstream", downstream, "specifies downstream")
 	flag.Usage = usage
 
@@ -50,9 +50,9 @@ func main() {
 	command := flag.Arg(0)
 	switch {
 	case command == "update":
-		username, token := checkEnvs(username, token)
+		username, token = checkEnvs(username, token)
 		upstreamAuth := authType(upstream, username, token)
-		downstreamAuth := authType(upstream, username, token)
+		downstreamAuth := authType(downstream, username, token)
 		update(upstream, branch, downstream, upstreamAuth, downstreamAuth)
 	default:
 		usage()
