@@ -55,7 +55,14 @@ func update(upstream string, branch string, downstream string,
 		Name: upstreamDefaultRemoteName,
 		URLs: []string{upstream},
 	})
-	// TODO: error check for remote
+	if err != nil {
+		switch err {
+		case git.ErrRemoteNotFound:
+			log.Fatal("remote not found")
+		default:
+			log.Println(err)
+		}
+	}
 
 	// Get the working directory for the repository
 	w, err := r.Worktree()
@@ -103,7 +110,14 @@ func update(upstream string, branch string, downstream string,
 		Name: downstreamDefaultRemoteName,
 		URLs: []string{downstream},
 	})
-	// TODO: error check for remote
+	if err != nil {
+		switch err {
+		case git.ErrRemoteNotFound:
+			log.Fatal("remote not found")
+		default:
+			log.Println(err)
+		}
+	}
 
 	// Push using default options
 	// If authentication required push using authentication
@@ -114,11 +128,17 @@ func update(upstream string, branch string, downstream string,
 	})
 	if err != nil {
 		log.Fatal(err)
-
 	}
 	log.Println("Repository successfully synced")
 
 	return nil
+}
+func pull() {
+
+}
+
+func push() {
+
 }
 
 func extractPath(repo string) string {
