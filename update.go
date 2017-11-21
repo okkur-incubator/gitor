@@ -139,7 +139,7 @@ func push(r *git.Repository, downstream string, upstreamRef string, downstreamRe
 
 	// Push using default options
 	// If authentication required push using authentication
-	referenceList := append([]config.RefSpec{}, config.RefSpec("refs/heads/"+upstreamRef+":"+"refs/heads/"+downstreamRef))
+	referenceList := append([]config.RefSpec{}, config.RefSpec(upstreamRef+":"+downstreamRef))
 	fmt.Println(referenceList)
 	log.Printf("Pushing to %s ...\n", downstream)
 	err = r.Push(&git.PushOptions{
