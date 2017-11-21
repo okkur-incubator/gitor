@@ -87,7 +87,7 @@ func pull(r *git.Repository, upstream string, upstreamRef string, upstreamAuth t
 
 	var reference plumbing.ReferenceName
 	reference = plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", upstreamRef))
-	fmt.Println(reference)
+
 	err = w.Pull(&git.PullOptions{
 		RemoteName:    upstreamDefaultRemoteName,
 		ReferenceName: reference,
@@ -139,7 +139,8 @@ func push(r *git.Repository, downstream string, upstreamRef string, downstreamRe
 
 	// Push using default options
 	// If authentication required push using authentication
-	referenceList := append([]config.RefSpec{}, config.RefSpec(upstreamRef+":"+downstreamRef))
+	referenceList := append([]config.RefSpec{}, config.RefSpec(fmt.Sprintf("refs/heads/%s", upstreamRef)+":"+fmt.Sprintf("refs/heads/%s", downstreamRef)))
+	fmt.Println(referenceList)
 	log.Printf("Pushing to %s ...\n", downstream)
 	err = r.Push(&git.PushOptions{
 		RemoteName: downstreamDefaultRemoteName,
