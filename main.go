@@ -40,8 +40,8 @@ func main() {
 	)
 
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
-	flag.StringVar(&upstreamRef, "upstream branch", "master", "specifies upstream branch")
-	flag.StringVar(&downstreamRef, "downstream branch", "master", "specifies downstream branch")
+	flag.StringVar(&upstreamRef, "upstreamRef", "master", "specifies upstream branch")
+	flag.StringVar(&downstreamRef, "downstreamRef", "master", "specifies downstream branch")
 	flag.StringVar(&username, "username", "", "specifies username")
 	flag.StringVar(&token, "token", "", "specifies token or password")
 	flag.StringVar(&downstream, "downstream", downstream, "specifies downstream")
@@ -55,6 +55,7 @@ func main() {
 		username, token = checkEnvs(username, token)
 		upstreamAuth := authType(upstream, username, token)
 		downstreamAuth := authType(downstream, username, token)
+		upstreamRef, downstreamRef = checkRefs(upstreamRef, downstreamRef)
 		update(upstream, upstreamRef, downstream, downstreamRef, upstreamAuth, downstreamAuth)
 	default:
 		usage()
@@ -108,4 +109,12 @@ func authType(repo string, username string, token string) transport.AuthMethod {
 	}
 
 	return auth
+}
+
+func checkRefs(upstreamRef string, downstreamRef string) (string, string) {
+	if upstreamRef == "" || downstreamRef == "" {
+		upstreamRef = "master"
+		downstreamRef = "master"
+	}
+	return upstreamRef, downstreamRef
 }
