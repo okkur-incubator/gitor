@@ -31,15 +31,17 @@ const downstreamDefaultRemoteName string = "downstream"
 func main() {
 
 	var (
-		upstream   string
-		branch     string
-		username   string
-		token      string
-		downstream string
+		upstream      string
+		upstreamRef   string
+		downstreamRef string
+		username      string
+		token         string
+		downstream    string
 	)
 
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
-	flag.StringVar(&branch, "branch", "master", "specifies branch")
+	flag.StringVar(&upstreamRef, "upstream branch", "master", "specifies upstream branch")
+	flag.StringVar(&downstreamRef, "downstream branch", "master", "specifies downstream branch")
 	flag.StringVar(&username, "username", "", "specifies username")
 	flag.StringVar(&token, "token", "", "specifies token or password")
 	flag.StringVar(&downstream, "downstream", downstream, "specifies downstream")
@@ -53,7 +55,7 @@ func main() {
 		username, token = checkEnvs(username, token)
 		upstreamAuth := authType(upstream, username, token)
 		downstreamAuth := authType(downstream, username, token)
-		update(upstream, branch, downstream, upstreamAuth, downstreamAuth)
+		update(upstream, upstreamRef, downstream, downstreamRef, upstreamAuth, downstreamAuth)
 	default:
 		usage()
 	}

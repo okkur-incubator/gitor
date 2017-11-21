@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 
+	"gopkg.in/src-d/go-git.v4/plumbing"
+
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 
 	git "gopkg.in/src-d/go-git.v4"
@@ -27,7 +29,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
-func update(upstream string, branch string, downstream string,
+func update(upstream string, upstreamRef string, downstream string, downstreamRef string,
 	upstreamAuth transport.AuthMethod, downstreamAuth transport.AuthMethod) error {
 
 	// Validate upstream URL
@@ -55,8 +57,23 @@ func update(upstream string, branch string, downstream string,
 		Name: upstreamDefaultRemoteName,
 		URLs: []string{upstream},
 	})
-	// TODO: error check for remote
+	if err != nil {
+		switch err {
+		case git.ErrRemoteNotFound:
+			log.Fatal("remote not found")
+		default:
+			log.Println(err)
+		}
+	}
 
+	pull(r, upstream, upstreamRef, upstreamAuth)
+
+	push(r, downstream, upstreamRef, downstreamRef, downstreamAuth)
+
+	return nil
+}
+
+func pull(r *git.Repository, upstream string, upstreamRef string, upstreamAuth transport.AuthMethod) {
 	// Get the working directory for the repository
 	w, err := r.Worktree()
 	if err != nil {
@@ -66,9 +83,14 @@ func update(upstream string, branch string, downstream string,
 	// Pull using default options
 	// If authentication required pull using authentication
 	log.Printf("Pulling %s ...\n", upstream)
+
+	var reference plumbing.ReferenceName
+	reference = plumbing.ReferenceName(upstreamRef)
+
 	err = w.Pull(&git.PullOptions{
-		RemoteName: upstreamDefaultRemoteName,
-		Auth:       upstreamAuth,
+		RemoteName:    upstreamDefaultRemoteName,
+		ReferenceName: reference,
+		Auth:          upstreamAuth,
 	})
 	if err != nil {
 		switch err {
@@ -91,9 +113,11 @@ func update(upstream string, branch string, downstream string,
 	}
 
 	log.Printf("Pulled: %s\n", commit.Hash)
+}
 
+func push(r *git.Repository, downstream string, upstreamRef string, downstreamRef string, downstreamAuth transport.AuthMethod) {
 	// Validate downstream URL
-	err = validateRepo(downstream, downstreamAuth)
+	err := validateRepo(downstream, downstreamAuth)
 	if err != nil {
 		log.Println(err)
 	}
@@ -103,22 +127,29 @@ func update(upstream string, branch string, downstream string,
 		Name: downstreamDefaultRemoteName,
 		URLs: []string{downstream},
 	})
-	// TODO: error check for remote
+	if err != nil {
+		switch err {
+		case git.ErrRemoteNotFound:
+			log.Fatal("remote not found")
+		default:
+			log.Println(err)
+		}
+	}
 
 	// Push using default options
 	// If authentication required push using authentication
+	referenceList := append([]config.RefSpec{}, config.RefSpec(upstreamRef+":"+downstreamRef))
 	log.Printf("Pushing to %s ...\n", downstream)
 	err = r.Push(&git.PushOptions{
 		RemoteName: downstreamDefaultRemoteName,
+		RefSpecs:   referenceList,
 		Auth:       downstreamAuth,
 	})
 	if err != nil {
 		log.Fatal(err)
-
 	}
-	log.Println("Repository successfully synced")
 
-	return nil
+	log.Println("Repository successfully synced")
 }
 
 func extractPath(repo string) string {
