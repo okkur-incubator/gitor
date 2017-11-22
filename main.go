@@ -40,8 +40,8 @@ func main() {
 	)
 
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
-	flag.StringVar(&upstreamRef, "upstream branch", "master", "specifies upstream branch")
-	flag.StringVar(&downstreamRef, "downstream branch", "master", "specifies downstream branch")
+	flag.StringVar(&upstreamRef, "upstreamRef", "master", "specifies upstream branch")
+	flag.StringVar(&downstreamRef, "downstreamRef", "", "specifies downstream branch")
 	flag.StringVar(&username, "username", "", "specifies username")
 	flag.StringVar(&token, "token", "", "specifies token or password")
 	flag.StringVar(&downstream, "downstream", downstream, "specifies downstream")

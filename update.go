@@ -15,6 +15,7 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/url"
 	"strconv"
@@ -85,7 +86,7 @@ func pull(r *git.Repository, upstream string, upstreamRef string, upstreamAuth t
 	log.Printf("Pulling %s ...\n", upstream)
 
 	var reference plumbing.ReferenceName
-	reference = plumbing.ReferenceName(upstreamRef)
+	reference = plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", upstreamRef))
 
 	err = w.Pull(&git.PullOptions{
 		RemoteName:    upstreamDefaultRemoteName,
