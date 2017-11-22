@@ -55,7 +55,6 @@ func main() {
 		username, token = checkEnvs(username, token)
 		upstreamAuth := authType(upstream, username, token)
 		downstreamAuth := authType(downstream, username, token)
-		upstreamRef, downstreamRef = checkRefs(upstreamRef, downstreamRef)
 		update(upstream, upstreamRef, downstream, downstreamRef, upstreamAuth, downstreamAuth)
 	default:
 		usage()
@@ -109,12 +108,4 @@ func authType(repo string, username string, token string) transport.AuthMethod {
 	}
 
 	return auth
-}
-
-func checkRefs(upstreamRef string, downstreamRef string) (string, string) {
-	if upstreamRef == "" || downstreamRef == "" {
-		upstreamRef = "master"
-		downstreamRef = "master"
-	}
-	return upstreamRef, downstreamRef
 }
