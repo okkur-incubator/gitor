@@ -84,7 +84,7 @@ func pull(r *git.Repository, upstream string, upstreamRef string, upstreamAuth t
 	log.Printf("Pulling %s ...\n", upstream)
 
 	var reference plumbing.ReferenceName
-	reference = plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", upstreamRef))
+	reference = plumbing.ReferenceName(fmt.Sprintf("%s%s", localRef, upstreamRef))
 
 	err = w.Pull(&git.PullOptions{
 		RemoteName:    upstreamDefaultRemoteName,
@@ -110,7 +110,12 @@ func pull(r *git.Repository, upstream string, upstreamRef string, upstreamAuth t
 	if err != nil {
 		log.Println(err)
 	}
-
+	remote, err := r.Reference(plumbing.ReferenceName(fmt.Sprintf("%s%s/%s", remoteRef, upstreamDefaultRemoteName, upstreamRef)), true)
+	if err != nil {
+		log.Println(err)
+	}
+	remoteHash := remote.Hash()
+	log.Printf("Pulled hash: %s\n", remoteHash)
 	log.Printf("Pulled: %s\n", commit.Hash)
 }
 
@@ -137,7 +142,10 @@ func push(r *git.Repository, downstream string, upstreamRef string, downstreamRe
 
 	// Push using default options
 	// If authentication required push using authentication
-	referenceList := append([]config.RefSpec{}, config.RefSpec(upstreamRef+":"+downstreamRef))
+	upstreamReference := plumbing.ReferenceName(fmt.Sprintf("%s%s", localRef, upstreamRef))
+	downstreamReference := plumbing.ReferenceName(fmt.Sprintf("%s%s", localRef, downstreamRef))
+	referenceList := append([]config.RefSpec{}, config.RefSpec(upstreamReference+":"+downstreamReference))
+
 	log.Printf("Pushing to %s ...\n", downstream)
 	err = r.Push(&git.PushOptions{
 		RemoteName: downstreamDefaultRemoteName,
@@ -147,7 +155,12 @@ func push(r *git.Repository, downstream string, upstreamRef string, downstreamRe
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	remote, err := r.Reference(plumbing.ReferenceName(fmt.Sprintf("%s%s/%s", remoteRef, downstreamDefaultRemoteName, downstreamRef)), true)
+	if err != nil {
+		log.Println(err)
+	}
+	remoteHash := remote.Hash()
+	log.Printf("Pushed hash: %s\n", remoteHash)
 	log.Println("Repository successfully synced")
 }
 
