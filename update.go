@@ -17,8 +17,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/url"
-	"strconv"
 	"strings"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -154,36 +152,18 @@ func push(r *git.Repository, downstream string, upstreamRef string, downstreamRe
 }
 
 func extractPath(repo string) string {
-	sshS := "ssh://"
-	stSet := strings.Contains(repo, "https://")
-	sSet := strings.Contains(repo, "http://")
-	ssSet := strings.Contains(repo, "ssh://")
-	cSet := strings.ContainsAny(repo, ":")
-
-	// Handle ssh protocol - no protocol + colon suggests ssh
-	if !stSet && !sSet && !ssSet && cSet {
-		repo = sshS + repo
-	}
-
-	u, err := url.Parse(repo)
+	endpoint, err := transport.NewEndpoint(repo)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	path := strings.TrimSuffix(u.Path, ".git")
-	port := u.Port()
-
-	// Handle parsing of part of path as port
-	if _, err := strconv.Atoi(port); err != nil {
-		path = port + path
-	}
+	path := strings.TrimSuffix(endpoint.Path(), ".git")
 
 	// Check for missing path separator
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-
-	host := u.Hostname()
+	host := endpoint.Host()
 	filePath := host + path
 
 	return filePath
