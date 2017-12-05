@@ -83,7 +83,7 @@ func pull(r *git.Repository, upstream string, upstreamRef string, upstreamAuth t
 	// If authentication required pull using authentication
 	log.Printf("Pulling %s ...\n", upstream)
 
-	reference := plumbing.ReferenceName(fmt.Sprintf("%s%s", remoteRefBase, upstreamRef))
+	reference := plumbing.ReferenceName(fmt.Sprintf("%s%s", headRefBase, upstreamRef))
 	err = w.Pull(&git.PullOptions{
 		RemoteName:    upstreamDefaultRemoteName,
 		ReferenceName: reference,

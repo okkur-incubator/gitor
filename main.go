@@ -27,7 +27,7 @@ import (
 
 const upstreamDefaultRemoteName string = "upstream"
 const downstreamDefaultRemoteName string = "downstream"
-const localRefBase string = "refs/heads/"
+const headRefBase string = "refs/heads/"
 const remoteRefBase string = "refs/remotes/"
 
 func main() {
