@@ -96,10 +96,23 @@ func authType(repo string, username string, token string) transport.AuthMethod {
 	}
 	switch {
 	case endpoint.Protocol() == "ssh":
-		user := os.Getenv("USER")
-		auth, err = ssh.NewSSHAgentAuth(user)
-		if err != nil {
-			log.Fatal(err)
+		pemPath := os.Getenv("PEM_PATH")
+		switch {
+		case pemPath != "":
+			user := os.Getenv("USER")
+			password := os.Getenv("PEM_TOKEN")
+			auth, err := ssh.NewPublicKeysFromFile(user, pemPath, password)
+			if err != nil {
+				log.Println(err)
+			}
+			return auth
+		default:
+			user := os.Getenv("USER")
+			auth, err = ssh.NewSSHAgentAuth(user)
+			if err != nil {
+				log.Fatal(err)
+
+			}
 		}
 	case endpoint.Protocol() == "https":
 		auth = http.NewBasicAuth(username, token)
