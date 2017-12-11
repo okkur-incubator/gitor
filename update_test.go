@@ -36,10 +36,3 @@ func TestExtractingPathPlainSSH(t *testing.T) {
 		t.Error("Expected github.com/okkur/gitor, got ", path)
 	}
 }
-
-func TestExtractingPathSSH(t *testing.T) {
-	path := extractPath("ssh://git@github.com:okkur/gitor")
-	if path != "github.com/okkur/gitor" {
-		t.Error("Expected github.com/okkur/gitor, got ", path)
-	}
-}
