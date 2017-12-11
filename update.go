@@ -148,8 +148,7 @@ func push(r *git.Repository, downstream string, upstreamRef string, downstreamRe
 	if err != nil {
 		log.Fatal(err)
 	}
-	remote, err := r.Reference(plumbing.ReferenceName(fmt.Sprintf("%s%s/%s", remoteRefBase,
-		downstreamDefaultRemoteName, downstreamRef)), true)
+	remote, err := r.Reference(plumbing.ReferenceName(fmt.Sprintf("%s%s", remoteRefBase, downstreamRef)), true)
 	if err != nil {
 		log.Println(err)
 	}
