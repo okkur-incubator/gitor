@@ -110,11 +110,9 @@ func checkEnvs(username string, token string, systemUser string, pemPath string,
 
 	pemPwdEnv := os.Getenv("PEM_PWD")
 	if pemPwd == "" {
-		if pemPwdEnv == "" {
-			log.Println("pem file password not set")
-		}
 		pemPwd = pemPwdEnv
 	}
+
 	return username, token, pemPath, pemPwd
 }
 
