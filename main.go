@@ -39,6 +39,7 @@ func main() {
 		username      string
 		token         string
 		downstream    string
+		localPath     string
 	)
 
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
@@ -47,6 +48,7 @@ func main() {
 	flag.StringVar(&username, "username", "", "specifies username")
 	flag.StringVar(&token, "token", "", "specifies token or password")
 	flag.StringVar(&downstream, "downstream", "", "specifies downstream")
+	flag.StringVar(&localPath, "localPath", "", "specifies local repo filepath")
 	flag.Usage = usage
 
 	flag.Parse()
@@ -57,7 +59,7 @@ func main() {
 		username, token = checkEnvs(username, token)
 		upstreamAuth := authType(upstream, username, token)
 		downstreamAuth := authType(downstream, username, token)
-		update(upstream, upstreamRef, downstream, downstreamRef, upstreamAuth, downstreamAuth)
+		update(upstream, upstreamRef, downstream, downstreamRef, upstreamAuth, downstreamAuth, localPath)
 	default:
 		usage()
 	}

@@ -29,7 +29,7 @@ import (
 )
 
 func update(upstream string, upstreamRef string, downstream string, downstreamRef string,
-	upstreamAuth transport.AuthMethod, downstreamAuth transport.AuthMethod) error {
+	upstreamAuth transport.AuthMethod, downstreamAuth transport.AuthMethod, localPath string) error {
 
 	// Validate upstream URL
 	err := validateRepo(upstream, upstreamAuth)
@@ -67,7 +67,7 @@ func update(upstream string, upstreamRef string, downstream string, downstreamRe
 
 	pull(r, upstream, upstreamRef, upstreamAuth)
 
-	push(r, downstream, upstreamRef, downstreamRef, downstreamAuth)
+	push(r, downstream, upstreamRef, downstreamRef, downstreamAuth, localPath)
 
 	return nil
 }
@@ -111,33 +111,33 @@ func pull(r *git.Repository, upstream string, upstreamRef string, upstreamAuth t
 	log.Printf("Pulled: %s\n", commit.Hash)
 }
 
-func push(r *git.Repository, downstream string, upstreamRef string, downstreamRef string, downstreamAuth transport.AuthMethod) {
+func push(r *git.Repository, downstream string, upstreamRef string,
+	downstreamRef string, downstreamAuth transport.AuthMethod, localPath string) {
 	// Validate downstream URL
 	err := validateRepo(downstream, downstreamAuth)
 	if err != nil {
 		log.Println(err)
 	}
 
-	// Add a downstream remote
-	_, err = r.CreateRemote(&config.RemoteConfig{
-		Name: downstreamDefaultRemoteName,
-		URLs: []string{downstream},
-	})
-	if err != nil {
-		switch err {
-		case git.ErrRemoteNotFound:
-			log.Fatal("remote not found")
-		default:
-			log.Println(err)
-		}
-	}
+	/* 	// Add a downstream remote
+	   	_, err = r.CreateRemote(&config.RemoteConfig{
+	   		Name: downstreamDefaultRemoteName,
+	   		URLs: []string{downstream},
+	   	})
+	   	if err != nil {
+	   		switch err {
+	   		case git.ErrRemoteNotFound:
+	   			log.Fatal("remote not found")
+	   		default:
+	   			log.Println(err)
+	   		}
+	   	} */
 
 	// Push using default options
 	// If authentication required push using authentication
-	upstreamReference := plumbing.ReferenceName(fmt.Sprintf("%s%s", remoteRefBase, upstreamRef))
-	downstreamReference := plumbing.ReferenceName(fmt.Sprintf("%s%s", remoteRefBase, downstreamRef))
+	b := checkReference(r, downstream, downstreamRef, localPath)
 	referenceList := append([]config.RefSpec{},
-		config.RefSpec(upstreamReference+":"+downstreamReference))
+		config.RefSpec(b+":"+b))
 
 	log.Printf("Pushing to %s ...\n", downstream)
 	err = r.Push(&git.PushOptions{
@@ -201,4 +201,61 @@ func validateRepo(repo string, upstreamAuth transport.AuthMethod) error {
 	}
 
 	return nil
+}
+
+func checkReference(r *git.Repository, downstream string, downstreamRef string, localPath string) plumbing.ReferenceName {
+	// Open an existing repository in a specific folder
+	r, err := git.PlainOpen(localPath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	ds, err := r.Remote(downstream)
+	if err == git.ErrRemoteNotFound {
+		ds, err = r.CreateRemote(&config.RemoteConfig{
+			Name: downstream,
+			URLs: []string{downstream},
+		})
+	}
+	if err != nil {
+		log.Println(err)
+	}
+
+	b := plumbing.ReferenceName(fmt.Sprintf("%s%s", headRefBase, downstreamRef))
+
+	// Check if reference exists locally
+	refs, err := r.References()
+	if err != nil {
+		log.Println(err)
+	}
+	var foundLocal bool
+
+	refs.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Name() == b {
+			log.Printf("reference exists locally:\n%s\n", ref)
+			foundLocal = true
+		}
+		return nil
+	})
+	if !foundLocal {
+		log.Printf("reference %s does not exist locally\n", b)
+	}
+
+	// Check if reference exists on remote
+	remoteRefs, err := ds.List(&git.ListOptions{})
+	if err != nil {
+		log.Println(err)
+	}
+	var found bool
+	for _, ref := range remoteRefs {
+		if ref.Name() == b {
+			log.Printf("reference already exists on remote:\n%s\n", ref)
+			found = true
+		}
+	}
+	if !found {
+		fmt.Printf("reference %s does not exist on remote\n", b)
+	}
+
+	return b
 }
