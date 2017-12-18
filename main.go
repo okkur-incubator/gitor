@@ -34,9 +34,10 @@ func main() {
 		upstream      string
 		upstreamRef   string
 		downstreamRef string
-		username      string
+		user          string
 		token         string
 		downstream    string
+		systemUser    string
 		pemPath       string
 		pemPwd        string
 	)
@@ -44,9 +45,10 @@ func main() {
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
 	flag.StringVar(&upstreamRef, "upstreamRef", "master", "specifies upstream branch")
 	flag.StringVar(&downstreamRef, "downstreamRef", "master", "specifies downstream branch")
-	flag.StringVar(&username, "username", "", "specifies username")
+	flag.StringVar(&user, "user", "", "specifies GitHub/GitLab username")
 	flag.StringVar(&token, "token", "", "specifies token or password")
 	flag.StringVar(&downstream, "downstream", "", "specifies downstream")
+	flag.StringVar(&systemUser, "systemUser", "", "specifies system username")
 	flag.StringVar(&pemPath, "pemPath", "", "specifies path to pem file")
 	flag.StringVar(&pemPwd, "pemPwd", "", "specifies pem file password")
 	flag.Usage = usage
@@ -56,7 +58,7 @@ func main() {
 	command := flag.Arg(0)
 	switch {
 	case command == "update":
-		username, token, pemPath, pemPwd = checkEnvs(username, token, pemPath, pemPwd)
+		username, token, pemPath, pemPwd := checkEnvs(user, token, systemUser, pemPath, pemPwd)
 		upstreamAuth := authType(upstream, username, token, pemPath, pemPwd)
 		downstreamAuth := authType(downstream, username, token, pemPath, pemPwd)
 		update(upstream, upstreamRef, downstream, downstreamRef, upstreamAuth, downstreamAuth)
@@ -73,7 +75,7 @@ func usage() {
 	os.Exit(2)
 }
 
-func checkEnvs(username string, token string, pemPath string, pemPwd string) (string, string, string, string) {
+func checkEnvs(username string, token string, systemUser string, pemPath string, pemPwd string) (string, string, string, string) {
 	userEnv := os.Getenv("GITOR_USER")
 	if username == "" {
 		if userEnv == "" {
@@ -88,6 +90,14 @@ func checkEnvs(username string, token string, pemPath string, pemPwd string) (st
 			log.Fatal("token or password not set")
 		}
 		token = tokenEnv
+	}
+
+	systemUserEnv := os.Getenv("USER")
+	if systemUser == "" {
+		if userEnv == "" {
+			log.Fatal("username not set")
+		}
+		username = systemUserEnv
 	}
 
 	pemEnv := os.Getenv("PEM_PATH")
