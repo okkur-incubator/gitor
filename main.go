@@ -94,7 +94,7 @@ func checkEnvs(username string, token string, systemUser string, pemPath string,
 
 	systemUserEnv := os.Getenv("USER")
 	if systemUser == "" {
-		if userEnv == "" {
+		if systemUserEnv == "" {
 			log.Fatal("username not set")
 		}
 		username = systemUserEnv
