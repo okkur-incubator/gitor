@@ -136,9 +136,8 @@ func push(r *git.Repository, downstream string, upstreamRef string,
 	// Push using default options
 	// If authentication required push using authentication
 	b := checkReference(r, downstream, downstreamRef, localPath)
-	referenceList := append([]config.RefSpec{},
-		config.RefSpec(b+":"+b))
-
+	referenceList := []config.RefSpec{config.RefSpec(b+":"+b)}
+	
 	log.Printf("Pushing to %s ...\n", downstream)
 	err = r.Push(&git.PushOptions{
 		RemoteName: downstreamDefaultRemoteName,
@@ -163,13 +162,13 @@ func extractPath(repo string) string {
 		log.Fatal(err)
 	}
 
-	path := strings.TrimSuffix(endpoint.Path(), ".git")
+	path := strings.TrimSuffix(endpoint.Path, ".git")
 
 	// Check for missing path separator
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-	host := endpoint.Host()
+	host := endpoint.Host
 	filePath := host + path
 
 	return filePath
@@ -209,12 +208,14 @@ func checkReference(r *git.Repository, downstream string, downstreamRef string, 
 	if err != nil {
 		log.Println(err)
 	}
-
+	
+	refSpec := []config.RefSpec{config.RefSpec(fmt.Sprintf("+refs/heads/*:refs/remotes/%s/*", downstreamRef))}
 	ds, err := r.Remote(downstream)
 	if err == git.ErrRemoteNotFound {
 		ds, err = r.CreateRemote(&config.RemoteConfig{
 			Name: downstream,
 			URLs: []string{downstream},
+			Fetch: refSpec,
 		})
 	}
 	if err != nil {
