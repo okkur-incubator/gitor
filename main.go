@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
-	// "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 )
 
@@ -105,8 +105,12 @@ func authType(repo string, username string, token string) transport.AuthMethod {
 		if err != nil {
 			log.Fatal(err)
 		}
-/* 	case endpoint.Protocol == "https":
-		auth = http.NewBasicAuth(username, token) */
+	case endpoint.Protocol == "https":
+		authMethod := http.BasicAuth{}
+		authMethod.Username = username
+		authMethod.Password = token
+		auth = &http.BasicAuth{Username: username, Password: token}
+		return auth
 	default:
 		auth = nil
 	}

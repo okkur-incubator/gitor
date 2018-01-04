@@ -119,25 +119,11 @@ func push(r *git.Repository, downstream string, upstreamRef string,
 		log.Println(err)
 	}
 
-	/* 	// Add a downstream remote
-	   	_, err = r.CreateRemote(&config.RemoteConfig{
-	   		Name: downstreamDefaultRemoteName,
-	   		URLs: []string{downstream},
-	   	})
-	   	if err != nil {
-	   		switch err {
-	   		case git.ErrRemoteNotFound:
-	   			log.Fatal("remote not found")
-	   		default:
-	   			log.Println(err)
-	   		}
-	   	} */
-
 	// Push using default options
 	// If authentication required push using authentication
 	b := checkReference(r, downstream, downstreamRef, localPath)
 	referenceList := []config.RefSpec{config.RefSpec(b+":"+b)}
-	
+
 	log.Printf("Pushing to %s ...\n", downstream)
 	err = r.Push(&git.PushOptions{
 		RemoteName: downstreamDefaultRemoteName,
@@ -147,7 +133,7 @@ func push(r *git.Repository, downstream string, upstreamRef string,
 	if err != nil {
 		log.Fatal(err)
 	}
-	remote, err := r.Reference(plumbing.ReferenceName(fmt.Sprintf("%s%s", remoteRefBase, downstreamRef)), true)
+	remote, err := r.Reference(plumbing.ReferenceName(fmt.Sprintf("%s%s", headRefBase, downstreamRef)), true)
 	if err != nil {
 		log.Println(err)
 	}
@@ -174,13 +160,13 @@ func extractPath(repo string) string {
 	return filePath
 }
 
-func validateRepo(repo string, upstreamAuth transport.AuthMethod) error {
+func validateRepo(repo string, auth transport.AuthMethod) error {
 	// Create a temporary repository
 	r, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
 		return err
 	}
-
+	
 	// Add a new remote, with the default fetch refspec
 	_, err = r.CreateRemote(&config.RemoteConfig{
 		Name: git.DefaultRemoteName,
@@ -189,11 +175,11 @@ func validateRepo(repo string, upstreamAuth transport.AuthMethod) error {
 	if err != nil {
 		return err
 	}
-
+	
 	// Fetch using the new remote
 	err = r.Fetch(&git.FetchOptions{
 		RemoteName: git.DefaultRemoteName,
-		Auth:       upstreamAuth,
+		Auth:       auth,
 	})
 	if err != nil {
 		return err
@@ -208,12 +194,12 @@ func checkReference(r *git.Repository, downstream string, downstreamRef string, 
 	if err != nil {
 		log.Println(err)
 	}
-	
+
 	refSpec := []config.RefSpec{config.RefSpec(fmt.Sprintf("+refs/heads/*:refs/remotes/%s/*", downstreamRef))}
 	ds, err := r.Remote(downstream)
 	if err == git.ErrRemoteNotFound {
 		ds, err = r.CreateRemote(&config.RemoteConfig{
-			Name: downstream,
+			Name: downstreamDefaultRemoteName,
 			URLs: []string{downstream},
 			Fetch: refSpec,
 		})
@@ -223,7 +209,7 @@ func checkReference(r *git.Repository, downstream string, downstreamRef string, 
 	}
 
 	b := plumbing.ReferenceName(fmt.Sprintf("%s%s", headRefBase, downstreamRef))
-
+	
 	// Check if reference exists locally
 	refs, err := r.References()
 	if err != nil {
