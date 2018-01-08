@@ -30,6 +30,13 @@ func TestExtractingPathHTTPS(t *testing.T) {
 	}
 }
 
+func TestExtractingPathHTTPSPort(t *testing.T) {
+	path := extractPath("https://github.com:8080/okkur/gitor.git")
+	if path != "github.com/okkur/gitor" {
+		t.Error("Expected github.com/okkur/gitor, got ", path)
+	}
+}
+
 func TestExtractingPathPlainSSH(t *testing.T) {
 	path := extractPath("git@github.com:okkur/gitor")
 	if path != "github.com/okkur/gitor" {
