@@ -17,7 +17,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
@@ -37,16 +36,14 @@ func update(upstream string, upstreamRef string, downstream string, downstreamRe
 		log.Println(err)
 	}
 
-	path := extractPath(upstream)
-
 	// Initialize non bare repo
-	r, err := git.PlainInit(path, false)
+	r, err := git.PlainInit(upstream, false)
 	if err != git.ErrRepositoryAlreadyExists && err != nil {
 		log.Fatal(err)
 	}
 
 	// Open repo, if initialized
-	r, err = git.PlainOpen(path)
+	r, err = git.PlainOpen(upstream)
 	if err != nil {
 		log.Println(err)
 	}
@@ -121,7 +118,7 @@ func push(r *git.Repository, downstream string, upstreamRef string,
 
 	// Push using default options
 	// If authentication required push using authentication
-	b := checkReference(r, downstream, downstreamRef, localPath)
+	b := checkReference(r, downstream, downstreamRef, localPath, downstreamAuth)
 	referenceList := []config.RefSpec{config.RefSpec(b+":"+b)}
 
 	log.Printf("Pushing to %s ...\n", downstream)
@@ -140,24 +137,6 @@ func push(r *git.Repository, downstream string, upstreamRef string,
 	remoteHash := remote.Hash()
 	log.Printf("Pushed hash: %s\n", remoteHash)
 	log.Println("Repository successfully synced")
-}
-
-func extractPath(repo string) string {
-	endpoint, err := transport.NewEndpoint(repo)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	path := strings.TrimSuffix(endpoint.Path, ".git")
-
-	// Check for missing path separator
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
-	host := endpoint.Host
-	filePath := host + path
-
-	return filePath
 }
 
 func validateRepo(repo string, auth transport.AuthMethod) error {
@@ -188,20 +167,19 @@ func validateRepo(repo string, auth transport.AuthMethod) error {
 	return nil
 }
 
-func checkReference(r *git.Repository, downstream string, downstreamRef string, localPath string) plumbing.ReferenceName {
+func checkReference(r *git.Repository, downstream string, downstreamRef string,
+	 localPath string, auth transport.AuthMethod) plumbing.ReferenceName {
 	// Open an existing repository in a specific folder
 	r, err := git.PlainOpen(localPath)
 	if err != nil {
 		log.Println(err)
 	}
-
-	refSpec := []config.RefSpec{config.RefSpec(fmt.Sprintf("+refs/heads/*:refs/remotes/%s/*", downstreamRef))}
-	ds, err := r.Remote(downstream)
+	
+	ds, err := r.Remote(downstreamDefaultRemoteName)
 	if err == git.ErrRemoteNotFound {
 		ds, err = r.CreateRemote(&config.RemoteConfig{
 			Name: downstreamDefaultRemoteName,
 			URLs: []string{downstream},
-			Fetch: refSpec,
 		})
 	}
 	if err != nil {
@@ -227,9 +205,9 @@ func checkReference(r *git.Repository, downstream string, downstreamRef string, 
 	if !foundLocal {
 		log.Printf("reference %s does not exist locally\n", b)
 	}
-
+	
 	// Check if reference exists on remote
-	remoteRefs, err := ds.List(&git.ListOptions{})
+	remoteRefs, err := ds.List(&git.ListOptions{Auth: auth,})
 	if err != nil {
 		log.Println(err)
 	}
@@ -241,7 +219,7 @@ func checkReference(r *git.Repository, downstream string, downstreamRef string, 
 		}
 	}
 	if !found {
-		fmt.Printf("reference %s does not exist on remote\n", b)
+		log.Printf("reference %s does not exist on remote\n", b)
 	}
 
 	return b
