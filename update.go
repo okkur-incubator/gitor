@@ -31,7 +31,7 @@ func update(upstream string, upstreamRef string, downstream string, downstreamRe
 	upstreamAuth transport.AuthMethod, downstreamAuth transport.AuthMethod, localPath string) error {
 
 	// Validate upstream URL
-	err := validateRepo(upstream, upstreamAuth)
+	err := validateRepo(upstream, upstreamDefaultRemoteName, upstreamAuth)
 	if err != nil {
 		log.Println(err)
 	}
@@ -111,7 +111,7 @@ func pull(r *git.Repository, upstream string, upstreamRef string, upstreamAuth t
 func push(r *git.Repository, downstream string, upstreamRef string,
 	downstreamRef string, downstreamAuth transport.AuthMethod, localPath string) {
 	// Validate downstream URL
-	err := validateRepo(downstream, downstreamAuth)
+	err := validateRepo(downstream, downstreamDefaultRemoteName, downstreamAuth)
 	if err != nil {
 		log.Println(err)
 	}
@@ -139,7 +139,7 @@ func push(r *git.Repository, downstream string, upstreamRef string,
 	log.Println("Repository successfully synced")
 }
 
-func validateRepo(repo string, auth transport.AuthMethod) error {
+func validateRepo(repo string, remoteName string, auth transport.AuthMethod) error {
 	// Create a temporary repository
 	r, err := git.Init(memory.NewStorage(), nil)
 	if err != nil {
@@ -148,7 +148,7 @@ func validateRepo(repo string, auth transport.AuthMethod) error {
 	
 	// Add a new remote, with the default fetch refspec
 	_, err = r.CreateRemote(&config.RemoteConfig{
-		Name: git.DefaultRemoteName,
+		Name: remoteName,
 		URLs: []string{repo},
 	})
 	if err != nil {
@@ -157,7 +157,7 @@ func validateRepo(repo string, auth transport.AuthMethod) error {
 	
 	// Fetch using the new remote
 	err = r.Fetch(&git.FetchOptions{
-		RemoteName: git.DefaultRemoteName,
+		RemoteName: remoteName,
 		Auth:       auth,
 	})
 	if err != nil {

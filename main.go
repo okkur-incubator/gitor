@@ -25,8 +25,8 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 )
 
-const upstreamDefaultRemoteName string = "upstream"
-const downstreamDefaultRemoteName string = "downstream"
+const upstreamDefaultRemoteName string = "origin"
+const downstreamDefaultRemoteName string = "origin"
 const headRefBase string = "refs/heads/"
 const remoteRefBase string = "refs/remotes/"
 
