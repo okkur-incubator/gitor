@@ -3,7 +3,7 @@ project:
   state: "unstable"
   image: ""
   website: ""
-  oneLiner: "Git repository mirroring implemented in pure Go."
+  oneLiner: "CLI code syncing between repositories"
   description: |
     Mirror your repositories between Github, Gitlab or other platforms.
     Archive your projects, backup your dependencies or keep your forks up to date.
@@ -23,7 +23,7 @@ vision:
 
 contributionLinks:
   issueTemplate: "/.github/ISSUE_TEMPLATE.md"
-  starterIssues: "https://github.com/okkur/gitor/labels/starter%20issue" # replace dear-github with your actual url
+  starterIssues: "https://github.com/okkur-incubator/gitor/labels/starter%20issue"
 
 emails:
   commercialSupport: "support@okkur.io"
@@ -43,15 +43,15 @@ maintainers:
     nick: "stp-ip"
 
 repo:
-  link: "https://github.com/okkur/gitor/"
+  link: "https://github.com/okkur-incubator/gitor/"
   type: "Github"
 
 badges:
   - image: "https://img.shields.io/badge/state-unstable-blue.svg"
     alt: "state"
-  - image: "https://img.shields.io/github/release/okkur/gitor.svg"
-    link: "https://github.com/okkur/gitor/releases"
+  - image: "https://img.shields.io/github/release/okkur-incubator/gitor.svg"
+    link: "https://github.com/okkur-incubator/gitor/releases"
     alt: "release"
-  - image: "https://img.shields.io/github/license/okkur/gitor.svg"
+  - image: "https://img.shields.io/github/license/okkur-incubator/gitor.svg"
     link: "LICENSE"
     alt: "license"

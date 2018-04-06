@@ -17,7 +17,7 @@ This guide helps make contributing to Gitor simple and efficient for everyone.
 ### First contribution
 
 If you are starting out contributing to Gitor, there might be smaller scoped "starter issues" available:
-[Current starter issues](https://github.com/okkur/gitor/labels/starter%20issue)
+[Current starter issues](https://github.com/okkur-incubator/gitor/labels/starter%20issue)
 
 ### Report bug
 
