@@ -34,17 +34,23 @@ func main() {
 		upstream      string
 		upstreamRef   string
 		downstreamRef string
-		username      string
+		user          string
 		token         string
 		downstream    string
+		systemUser    string
+		pemPath       string
+		pemPwd        string
 	)
 
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
 	flag.StringVar(&upstreamRef, "upstreamRef", "master", "specifies upstream branch")
 	flag.StringVar(&downstreamRef, "downstreamRef", "master", "specifies downstream branch")
-	flag.StringVar(&username, "username", "", "specifies username")
+	flag.StringVar(&user, "user", "", "specifies GitHub/GitLab username")
 	flag.StringVar(&token, "token", "", "specifies token or password")
 	flag.StringVar(&downstream, "downstream", "", "specifies downstream")
+	flag.StringVar(&systemUser, "systemUser", "", "specifies system username")
+	flag.StringVar(&pemPath, "pemPath", "", "specifies path to pem file")
+	flag.StringVar(&pemPwd, "pemPwd", "", "specifies pem file password")
 	flag.Usage = usage
 
 	flag.Parse()
@@ -52,9 +58,9 @@ func main() {
 	command := flag.Arg(0)
 	switch {
 	case command == "update":
-		username, token = checkEnvs(username, token)
-		upstreamAuth := authType(upstream, username, token)
-		downstreamAuth := authType(downstream, username, token)
+		username, token, pemPath, pemPwd := checkEnvs(user, token, systemUser, pemPath, pemPwd)
+		upstreamAuth := authType(upstream, username, token, pemPath, pemPwd)
+		downstreamAuth := authType(downstream, username, token, pemPath, pemPwd)
 		update(upstream, upstreamRef, downstream, downstreamRef, upstreamAuth, downstreamAuth)
 	default:
 		usage()
@@ -69,7 +75,7 @@ func usage() {
 	os.Exit(2)
 }
 
-func checkEnvs(username string, token string) (string, string) {
+func checkEnvs(username string, token string, systemUser string, pemPath string, pemPwd string) (string, string, string, string) {
 	userEnv := os.Getenv("GITOR_USER")
 	if username == "" {
 		if userEnv == "" {
@@ -85,27 +91,60 @@ func checkEnvs(username string, token string) (string, string) {
 		}
 		token = tokenEnv
 	}
-	return username, token
+
+	systemUserEnv := os.Getenv("USER")
+	if systemUser == "" {
+		if systemUserEnv == "" {
+			log.Fatal("username not set")
+		}
+		username = systemUserEnv
+	}
+
+	pemEnv := os.Getenv("PEM_PATH")
+	if pemPath == "" {
+		if pemEnv == "" {
+			log.Fatal("path to pem file not set")
+		}
+		username = userEnv
+	}
+
+	pemPwdEnv := os.Getenv("PEM_PWD")
+	if pemPwd == "" {
+		pemPwd = pemPwdEnv
+	}
+
+	return username, token, pemPath, pemPwd
 }
 
-func authType(repo string, username string, token string) transport.AuthMethod {
-	var auth transport.AuthMethod
+func authType(repo string, username string, token string, pemPath string, pemPwd string) transport.AuthMethod {
 	endpoint, err := transport.NewEndpoint(repo)
 	if err != nil {
 		log.Fatal(err)
 	}
 	switch {
 	case endpoint.Protocol() == "ssh":
-		user := os.Getenv("USER")
-		auth, err = ssh.NewSSHAgentAuth(user)
-		if err != nil {
-			log.Fatal(err)
+		switch {
+		case pemPath != "":
+			user := os.Getenv("USER")
+			auth, err := ssh.NewPublicKeysFromFile(user, pemPath, pemPwd)
+			if err != nil {
+				log.Fatal(err)
+			}
+			return auth
+		default:
+			user := os.Getenv("USER")
+			auth, err := ssh.NewSSHAgentAuth(user)
+			if err != nil {
+				log.Fatal(err)
+			}
+			return auth
 		}
 	case endpoint.Protocol() == "https":
-		auth = http.NewBasicAuth(username, token)
+		auth := http.NewBasicAuth(username, token)
+		return auth
 	default:
+		var auth transport.AuthMethod
 		auth = nil
+		return auth
 	}
-
-	return auth
 }
