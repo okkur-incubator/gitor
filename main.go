@@ -25,8 +25,10 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 )
 
-const upstreamDefaultRemoteName string = "upstream"
-const downstreamDefaultRemoteName string = "downstream"
+const upstreamDefaultRemoteName string = "origin"
+const downstreamDefaultRemoteName string = "origin"
+const headRefBase string = "refs/heads/"
+const remoteRefBase string = "refs/remotes/"
 
 func main() {
 
@@ -37,6 +39,7 @@ func main() {
 		username      string
 		token         string
 		downstream    string
+		localPath     string
 	)
 
 	flag.StringVar(&upstream, "upstream", "https://github.com/okkur/gitor.git", "specifies upstream")
@@ -45,6 +48,7 @@ func main() {
 	flag.StringVar(&username, "username", "", "specifies username")
 	flag.StringVar(&token, "token", "", "specifies token or password")
 	flag.StringVar(&downstream, "downstream", "", "specifies downstream")
+	flag.StringVar(&localPath, "localPath", "", "specifies local repo filepath")
 	flag.Usage = usage
 
 	flag.Parse()
@@ -55,7 +59,7 @@ func main() {
 		username, token = checkEnvs(username, token)
 		upstreamAuth := authType(upstream, username, token)
 		downstreamAuth := authType(downstream, username, token)
-		update(upstream, upstreamRef, downstream, downstreamRef, upstreamAuth, downstreamAuth)
+		update(upstream, upstreamRef, downstream, downstreamRef, upstreamAuth, downstreamAuth, localPath)
 	default:
 		usage()
 	}
@@ -95,14 +99,18 @@ func authType(repo string, username string, token string) transport.AuthMethod {
 		log.Fatal(err)
 	}
 	switch {
-	case endpoint.Protocol() == "ssh":
+	case endpoint.Protocol == "ssh":
 		user := os.Getenv("USER")
 		auth, err = ssh.NewSSHAgentAuth(user)
 		if err != nil {
 			log.Fatal(err)
 		}
-	case endpoint.Protocol() == "https":
-		auth = http.NewBasicAuth(username, token)
+	case endpoint.Protocol == "https":
+		authMethod := http.BasicAuth{}
+		authMethod.Username = username
+		authMethod.Password = token
+		auth = &http.BasicAuth{Username: username, Password: token}
+		return auth
 	default:
 		auth = nil
 	}
